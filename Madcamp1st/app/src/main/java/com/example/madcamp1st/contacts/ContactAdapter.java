@@ -15,11 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madcamp1st.R;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> {
-    private final Contact[] contacts;
-    private ArrayList<Contact> filtered;
+    private List<Contact> contacts;
+    private List<Contact> filtered;
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
         public ImageView android;
@@ -36,9 +36,15 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         }
     }
 
-    public ContactAdapter(Contact[] contacts) {
+    public ContactAdapter(List<Contact> contacts) {
         this.contacts = contacts;
-        filtered = new ArrayList<>(Arrays.asList(contacts));
+        filtered = contacts;
+    }
+
+    public void updateContacts(List<Contact> contacts) {
+        this.contacts = contacts;
+        filtered = contacts;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -52,13 +58,15 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     @Override
     public void onBindViewHolder(@NonNull ContactViewHolder holder, int position) {
-        holder.name.setText(filtered.get(position).name);
-        holder.phone.setText(filtered.get(position).number);
+        Contact contact = filtered.get(position);
+
+        holder.name.setText(contact.name);
+        holder.phone.setText(contact.number);
 
         holder.calling.setOnClickListener(v -> {
             Context c = v.getContext();
             Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse("tel:" + filtered.get(position).number));
+            intent.setData(Uri.parse("tel:" + contact.number));
 
             try {
                 c.startActivity(intent);
@@ -75,7 +83,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     public void filter(String text) {
         if(text.isEmpty())
-            filtered = new ArrayList<>(Arrays.asList(contacts));
+            filtered = contacts;
         else {
             filtered = new ArrayList<>();
             text = text.toLowerCase();

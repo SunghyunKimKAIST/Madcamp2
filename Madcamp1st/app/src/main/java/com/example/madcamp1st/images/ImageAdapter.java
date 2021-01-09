@@ -1,77 +1,63 @@
 package com.example.madcamp1st.images;
 
-
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.util.Size;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.TextView;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.madcamp1st.R;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.File;
+import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
-    private final Fragment_Images fragment_images;
-    private final Image[] images;
+    private List<File> imageFilepaths;
 
     public static class ImageViewHolder extends RecyclerView.ViewHolder {
-        public ImageButton imageButton;
-        public TextView name;
+        public ImageView imageView;
 
-        public ImageViewHolder(View imageView) {
-            super(imageView);
-
-            imageButton = imageView.findViewById(R.id.imageButton_imagebuttonAndTextview);
-            name = imageView.findViewById(R.id.textView_imagebuttonAndTextview);
+        public ImageViewHolder(View itemView) {
+            super(itemView);
+            imageView = itemView.findViewById(R.id.imageView_images);
         }
     }
 
-    public ImageAdapter(Fragment_Images fragment_images, Image[] images) {
-        this.fragment_images = fragment_images;
-        this.images = images;
+    public ImageAdapter(List<File> imageFilepaths) {
+        this.imageFilepaths = imageFilepaths;
+    }
+
+    public void updateImages(List<File> imageFilepaths){
+        this.imageFilepaths = imageFilepaths;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ImageAdapter.ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View imageView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.imagebutton_and_textview, parent, false);
+                .inflate(R.layout.imageview_images, parent, false);
 
         return new ImageViewHolder(imageView);
     }
 
     @Override
     public void onBindViewHolder(ImageViewHolder holder, int position) {
-        Uri uri = images[position].uri;
-        String name = images[position].name;
+        File imageFilepath = imageFilepaths.get(position);
 
-        holder.imageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                fragment_images.zoomImageFromThumb(holder.imageButton, uri);
-            }
-        });
-
-        try {
-            Bitmap thumbnail = fragment_images.getContext().getContentResolver().loadThumbnail(uri, new Size(640, 480), null);
-            holder.imageButton.setImageBitmap(thumbnail);
-            holder.name.setText(name);
-        } catch (Exception e) {
-            holder.imageButton.setImageResource(R.drawable.sorry2);
-        }
+        holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFilepath.getPath()));
+        /*
+        Bitmap thumbnail = fragment_images.getContext().getContentResolver().loadThumbnail(uri, new Size(640, 480), null);
+        holder.imageButton.setImageBitmap(thumbnail);
+        holder.name.setText(name);
+        */
     }
 
     @Override
     public int getItemCount() {
-        return images.length;
+        return imageFilepaths.size();
     }
 }
