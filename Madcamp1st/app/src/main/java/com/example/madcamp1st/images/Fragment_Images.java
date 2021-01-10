@@ -38,6 +38,7 @@ import retrofit2.internal.EverythingIsNonNull;
 
 public class Fragment_Images extends Fragment {
     private View mView;
+    private ImageAdapter mAdapter;
 
     private List<File> internalImageFilepaths;
     private final String imagesDirectoryName = "images";
@@ -61,7 +62,7 @@ public class Fragment_Images extends Fragment {
         RecyclerView recyclerView = mView.findViewById(R.id.recyclerView_images);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        ImageAdapter mAdapter = new ImageAdapter(internalImageFilepaths);
+        mAdapter = new ImageAdapter(internalImageFilepaths);
         recyclerView.setAdapter(mAdapter);
 
         // DB 통신
@@ -80,13 +81,7 @@ public class Fragment_Images extends Fragment {
                 if(response.isSuccessful()){
                     List<String> dbImageNames = response.body().stream().map(imageFileName -> imageFileName.name).collect(Collectors.toList());
 
-                    try {
-                        internalImageFilepaths = syncImages(internalImageFilepaths, dbImageNames);
-                        mAdapter.updateImages(internalImageFilepaths);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "syncImages: 갤러리를 DB와 동기화하는데 실패했습니다", Toast.LENGTH_LONG).show();
-                    }
+                    syncImages(internalImageFilepaths, dbImageNames);
                 } else
                     Toast.makeText(getContext(), "getAllImageName: DB에서 이미지 리스트를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
@@ -105,37 +100,58 @@ public class Fragment_Images extends Fragment {
         if(!directory.exists())
             directory.mkdir();
 
-        List<File> res = new ArrayList<>(Arrays.asList(directory.listFiles()));
+        File[] listFiles = directory.listFiles();
+
+        if(listFiles == null) {
+            Toast.makeText(getContext(), "loadInternalImageFilepaths error", Toast.LENGTH_LONG).show();
+            return new ArrayList<>();
+        }
+
+        List<File> res = new ArrayList<>(Arrays.asList(listFiles));
         res.sort((l, r) -> l.getName().compareTo(r.getName()));
+
         return res;
     }
 
-    // TODO: Async
-    private File storeInternalImage(String imageFilepath) throws IOException {
-        File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
-        File file = new File(directory, imageFilepath);
-
-        if(!file.exists())
-            file.createNewFile();
-
-        try(FileOutputStream fos = new FileOutputStream(file)) {
-            try{
-                Response<ResponseBody> response = imageService.getImage(imageFilepath).execute();
+    // 동시성 문제 존재
+    private void getDBImageAndStoreAsync(String imageFilepath){
+        imageService.getImage(imageFilepath).enqueue(new Callback<ResponseBody>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if(response.isSuccessful()) {
-                    fos.write(response.body().bytes());
-                    return file;
+                    File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
+                    File file = new File(directory, imageFilepath);
+
+                    try {
+                        if (!file.exists())
+                            file.createNewFile();
+
+                        try(FileOutputStream fos = new FileOutputStream(file)){
+                            fos.write(response.body().bytes());
+
+                            internalImageFilepaths.add(file);
+                            internalImageFilepaths.sort((l, r) -> l.getName().compareTo(r.getName()));
+                            mAdapter.updateImages(internalImageFilepaths);
+                        }
+                    }catch (IOException e){
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "getImage: DB에서 가져온 이미지를 저장하는데 실패했습니다", Toast.LENGTH_LONG).show();
+
+                        if(file.exists())
+                            file.delete();
+                    }
                 }
-                else{
-                    Toast.makeText(getContext(), "storeInternalImage: DB에서 이미지를 가져오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
-                    file.delete();
-                    return null;
-                }
-            }catch(IOException e){
-                Toast.makeText(getContext(), "storeInternalImage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
-                file.delete();
-                return null;
+                else
+                    Toast.makeText(getContext(), "getImage: DB에서 이미지를 가져오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
-        }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(getContext(), "getImage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void dbPostImage(File internalImageFilepath){
@@ -169,7 +185,7 @@ public class Fragment_Images extends Fragment {
             return null;
     }
 
-    private List<File> syncImages(List<File> internalImageFilepaths, List<String> dbImageNames) throws IOException {
+    private void syncImages(List<File> internalImageFilepaths, List<String> dbImageNames){
         dbImageNames.sort(null);
 
         ListIterator<File> internalIterator = internalImageFilepaths.listIterator();
@@ -189,9 +205,7 @@ public class Fragment_Images extends Fragment {
 
                 internalImageFilepath = nextOrNull(internalIterator);
             } else{
-                File file = storeInternalImage(dbImageName);
-                if(file != null)
-                    internalImageFilepaths.add(file);
+                getDBImageAndStoreAsync(dbImageName);
 
                 dbImageName = nextOrNull(dbIterator);
             }
@@ -204,13 +218,9 @@ public class Fragment_Images extends Fragment {
         }
 
         while(dbImageName != null){
-            File file = storeInternalImage(dbImageName);
-            if(file != null)
-                internalImageFilepaths.add(file);
+            getDBImageAndStoreAsync(dbImageName);
 
             dbImageName = nextOrNull(dbIterator);
         }
-
-        return internalImageFilepaths;
     }
 }

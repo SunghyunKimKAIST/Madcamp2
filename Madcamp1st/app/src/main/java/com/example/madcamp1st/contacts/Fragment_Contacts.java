@@ -236,8 +236,6 @@ public class Fragment_Contacts extends Fragment {
     }
 
     private List<Contact> syncContacts(List<Contact> internalContacts, List<Contact> dbContacts) throws IOException {
-        timestamp = ZonedDateTime.now();
-
         dbContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
 
         Log.e("internalContacts", internalContacts.toString());
@@ -288,6 +286,7 @@ public class Fragment_Contacts extends Fragment {
             dbContact = nextOrNull(dbIterator);
         }
 
+        timestamp = ZonedDateTime.now();
         storeTimestamp(timestamp);
         storeInternalContacts(internalContacts);
 
