@@ -27,6 +27,9 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".contacts.CreateContactActivity"
+            android:parentActivityName=".MainActivity"/>
+
     </application>
 
 </manifest>
