@@ -37,13 +37,15 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     }
 
     public ContactAdapter(List<Contact> contacts) {
-        this.contacts = contacts;
-        filtered = contacts;
+        this.contacts = new ArrayList<>(contacts);
+        this.contacts.sort((l, r) -> l.name.compareTo(r.name));
+        filtered = this.contacts;
     }
 
     public void updateContacts(List<Contact> contacts) {
-        this.contacts = contacts;
-        filtered = contacts;
+        this.contacts = new ArrayList<>(contacts);
+        this.contacts.sort((l, r) -> l.name.compareTo(r.name));
+        filtered = this.contacts;
         notifyDataSetChanged();
     }
 
