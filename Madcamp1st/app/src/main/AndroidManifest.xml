@@ -23,6 +23,9 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".contacts.CreateContactActivity"
+            android:parentActivityName=".MainActivity"/>
+
         <activity android:name=".games.snake.SnakeActivity"
             android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait"/>
@@ -34,19 +37,6 @@
         <activity android:name=".games.breakout.BreakoutActivity"
             android:parentActivityName=".MainActivity"
             android:screenOrientation="landscape"/>
-
-        <provider
-            android:authorities="com.example.madcamp1st"
-            android:name="androidx.core.content.FileProvider"
-            android:exported="false"
-            android:requestLegacyExternalStorage = "true"
-            android:grantUriPermissions="true">
-
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-
-        </provider>
 
     </application>
 

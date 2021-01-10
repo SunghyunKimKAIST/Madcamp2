@@ -6,22 +6,25 @@
     android:layout_height="match_parent">
 
     <EditText
+        android:id="@+id/name_create_contact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="textPersonName"
         android:hint="name"
-        android:autofillHints="person_name" />
+        android:autofillHints="personName" />
 
     <EditText
+        android:id="@+id/number_create_contact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="phone"
         android:hint="phone number"
-        android:autofillHints="phone_number" />
+        android:autofillHints="phoneNumber" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="제출"/>
+        android:text="제출"
+        android:onClick="sendContact"/>
 
 </LinearLayout>

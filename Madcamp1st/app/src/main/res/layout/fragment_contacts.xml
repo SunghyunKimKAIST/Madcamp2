@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchView_contacts"
@@ -12,8 +11,22 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView_contacts"
+        android:layout_below="@id/searchView_contacts"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-</LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/create_contact_button"
+        android:layout_width="78dp"
+        android:layout_height="78dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        app:backgroundTint="@color/purple_200"
+        android:clickable="true"
+        android:src="@drawable/icon_plus"/>
+
+</RelativeLayout>
