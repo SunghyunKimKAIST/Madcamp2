@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -45,6 +44,7 @@ import retrofit2.internal.EverythingIsNonNull;
 
 public class Fragment_Contacts extends Fragment {
     private View mView;
+    private ContactAdapter mAdapter;
 
     private Gson gson;
 
@@ -103,7 +103,7 @@ public class Fragment_Contacts extends Fragment {
         RecyclerView recyclerView = mView.findViewById(R.id.recyclerView_contacts);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        ContactAdapter mAdapter = new ContactAdapter(internalContacts);
+        mAdapter = new ContactAdapter(internalContacts);
         recyclerView.setAdapter(mAdapter);
 
         // DB 통신
@@ -120,13 +120,8 @@ public class Fragment_Contacts extends Fragment {
                 if (response.isSuccessful()) {
                     List<Contact> dbContacts = response.body();
 
-                    try {
-                        internalContacts = syncContacts(internalContacts, dbContacts);
-                        mAdapter.updateContacts(internalContacts);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "syncContacts: 연락처를 DB와 동기화하는데 실패했습니다", Toast.LENGTH_LONG).show();
-                    }
+                    internalContacts = syncContacts(internalContacts, dbContacts);
+                    mAdapter.updateContacts(internalContacts);
                 } else
                     Toast.makeText(getContext(), "getAllNewerContacts: DB에서 연락처를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
@@ -172,6 +167,7 @@ public class Fragment_Contacts extends Fragment {
 
                     internalContacts.add(contact);
                     internalContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
+                    mAdapter.updateContacts(internalContacts);
 
                     createContactDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
                 } else
@@ -221,14 +217,19 @@ public class Fragment_Contacts extends Fragment {
         }
     }
 
-    private void storeInternalContacts(List<Contact> internalContacts) throws IOException {
+    private void storeInternalContacts(List<Contact> internalContacts){
         File file = new File(getContext().getFilesDir(), contactsDataFileName);
 
-        if(!file.exists())
-            file.createNewFile();
+        try {
+            if (!file.exists())
+                file.createNewFile();
 
-        try(OutputStreamWriter osw = new OutputStreamWriter(getContext().openFileOutput(contactsDataFileName, Context.MODE_PRIVATE))){
-            gson.toJson(internalContacts, new TypeToken<List<Contact>>(){}.getType(), osw);
+            try (OutputStreamWriter osw = new OutputStreamWriter(getContext().openFileOutput(contactsDataFileName, Context.MODE_PRIVATE))) {
+                gson.toJson(internalContacts, new TypeToken<List<Contact>>() {
+                }.getType(), osw);
+            }
+        }catch (IOException e){
+            Toast.makeText(getContext(), "storeInternalContacts error", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -255,6 +256,7 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
+                    storeInternalContacts(internalContacts);
                 }
             }
 
@@ -270,6 +272,7 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
+                    storeInternalContacts(internalContacts);
                 }
             }
         });
@@ -298,6 +301,7 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
+                    storeInternalContacts(internalContacts);
                 }
             }
 
@@ -313,6 +317,7 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
+                    storeInternalContacts(internalContacts);
                 }
             }
         });
@@ -326,7 +331,7 @@ public class Fragment_Contacts extends Fragment {
     }
 
     // 동시성 문제 존재
-    private List<Contact> syncContacts(List<Contact> internalContacts, List<Contact> dbContacts) throws IOException {
+    private List<Contact> syncContacts(List<Contact> internalContacts, List<Contact> dbContacts){
         boolean flag = true;
         ZonedDateTime now = ZonedDateTime.now();
         SyncFlag syncFlag = new SyncFlag(0, now);
@@ -396,8 +401,8 @@ public class Fragment_Contacts extends Fragment {
         if(flag){
             timestamp = now;
             storeTimestamp(timestamp);
+            storeInternalContacts(internalContacts);
         }
-        storeInternalContacts(internalContacts);
 
         return internalContacts;
     }
