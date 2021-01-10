@@ -18,7 +18,7 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/create_contact_button"
+        android:id="@+id/button_create_contact"
         android:layout_width="78dp"
         android:layout_height="78dp"
         android:layout_alignParentEnd="true"

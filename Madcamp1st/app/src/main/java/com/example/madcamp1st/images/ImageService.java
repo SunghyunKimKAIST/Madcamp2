@@ -21,7 +21,7 @@ public interface ImageService {
 
     @Multipart
     @POST("api/images")
-    Call<ResponseBody> postImage(
+    Call<ResponseBody> createImage(
             @Part("description") RequestBody description,
             @Part MultipartBody.Part file
     );

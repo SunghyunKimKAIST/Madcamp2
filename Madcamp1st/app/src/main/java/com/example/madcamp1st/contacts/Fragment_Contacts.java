@@ -148,7 +148,7 @@ public class Fragment_Contacts extends Fragment {
             }
         });
 
-        mView.findViewById(R.id.create_contact_button).setOnClickListener(v ->
+        mView.findViewById(R.id.button_create_contact).setOnClickListener(v ->
             startActivityForResult(new Intent(getContext(), CreateContactActivity.class), REQUEST_CODE_CREATE_CONTACT_ACTIVITY)
         );
     }
@@ -157,8 +157,7 @@ public class Fragment_Contacts extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CODE_CREATE_CONTACT_ACTIVITY){
-            if(resultCode == Activity.RESULT_OK){
+        if(requestCode == REQUEST_CODE_CREATE_CONTACT_ACTIVITY && resultCode == Activity.RESULT_OK){
                 String name = data.getStringExtra("name");
                 String number = data.getStringExtra("number");
 
@@ -171,9 +170,7 @@ public class Fragment_Contacts extends Fragment {
 
                     createContactDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
                 } else
-                    Toast.makeText(getContext(), "intent error", Toast.LENGTH_SHORT).show();
-            } else
-                Toast.makeText(getContext(), "create contact activity was not finished correctly", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "create contact: intent error", Toast.LENGTH_SHORT).show();
         }
     }
 

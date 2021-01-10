@@ -154,7 +154,7 @@ public class Fragment_Images extends Fragment {
         });
     }
 
-    private void dbPostImage(File internalImageFilepath){
+    private void dbCreateImage(File internalImageFilepath){
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(internalImageFilepath.toURI().toString()));
         RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), internalImageFilepath);
 
@@ -162,7 +162,7 @@ public class Fragment_Images extends Fragment {
 
         RequestBody description = RequestBody.create(MultipartBody.FORM, "description");
 
-        imageService.postImage(description, body).enqueue(new Callback<ResponseBody>() {
+        imageService.createImage(description, body).enqueue(new Callback<ResponseBody>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -201,7 +201,7 @@ public class Fragment_Images extends Fragment {
                 internalImageFilepath = nextOrNull(internalIterator);
                 dbImageName = nextOrNull(dbIterator);
             } else if(compare < 0) {
-                dbPostImage(internalImageFilepath);
+                dbCreateImage(internalImageFilepath);
 
                 internalImageFilepath = nextOrNull(internalIterator);
             } else{
@@ -212,7 +212,7 @@ public class Fragment_Images extends Fragment {
         }
 
         while(internalImageFilepath != null){
-            dbPostImage(internalImageFilepath);
+            dbCreateImage(internalImageFilepath);
 
             internalImageFilepath = nextOrNull(internalIterator);
         }
