@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    tools:context=".Fragment_Diary">
+
+    <Button
+        android:id="@+id/date_button"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:backgroundTint="@color/material_on_primary_emphasis_medium"
+        android:textColor="@color/black" />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:id="@+id/weather_button"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/sunny"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/radio_button_sunny" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/overcast"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/radio_button_overcast" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/cloudy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/radio_button_cloudy" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/rainy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/radio_button_rainy" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/snowy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/radio_button_snowy" />
+
+    </RadioGroup>
+
+    <RatingBar
+        android:id="@+id/daily_rating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:progressBackgroundTint="#BCBCB8"
+        android:progressTint="#FFFF00"
+        android:secondaryProgressTint="#FFE60B" />
+
+    <EditText
+        android:id="@+id/daily_comment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:gravity="top"
+        android:background="@drawable/border"
+        android:padding="10dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/save_diary"
+        android:layout_gravity="center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:textSize="20dp"
+        android:text="Save"
+        android:layout_marginTop="10dp"/>
+</LinearLayout>
