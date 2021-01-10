@@ -27,7 +27,7 @@ public class MainActivity extends FragmentActivity {
                     imgView.setImageResource(R.drawable.tab_icon_images);
                     break;
                 case 2:
-                    imgView.setImageResource(R.drawable.tab_icon_games);
+                    imgView.setImageResource(R.drawable.tab_icon_diary);
             }
             imgView.setPadding(10, 10, 10, 10);
             tab.setCustomView(imgView);

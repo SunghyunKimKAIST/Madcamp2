@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.madcamp1st.contacts.Fragment_Contacts;
-import com.example.madcamp1st.games.Fragment_Games;
+import com.example.madcamp1st.diary.Fragment_Diary;
 import com.example.madcamp1st.images.Fragment_Images;
 
 public class SectionPageAdapter extends FragmentStateAdapter {
@@ -23,7 +23,7 @@ public class SectionPageAdapter extends FragmentStateAdapter {
             case 1:
                 return new Fragment_Images();
             case 2:
-                return new Fragment_Games();
+                return new Fragment_Diary();
         }
 
         return new Fragment();

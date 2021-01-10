@@ -15,6 +15,10 @@
         android:theme="@style/Theme.Madcamp1st"
         android:usesCleartextTraffic="true">
 
+        <activity android:name=".diary.NewDiaryActivity"
+            android:parentActivityName=".MainActivity"/>
+        <activity android:name=".diary.EditDiaryActivity"
+            android:parentActivityName=".MainActivity"/>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,18 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".games.snake.SnakeActivity"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait"/>
-
-        <activity android:name=".games.minesweeper.MinesweeperActivity"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait"/>
-
-        <activity android:name=".games.breakout.BreakoutActivity"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="landscape"/>
 
         <provider
             android:authorities="com.example.madcamp1st"
