@@ -1,5 +1,7 @@
 package com.example.madcamp1st;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -12,11 +14,14 @@ import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(com.example.madcamp1st.R.layout.activity_main);
+
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle("MadCamp Week2");
 
         ViewPager2 mViewPager = findViewById(R.id.viewPager_main);
         mViewPager.setAdapter(new SectionPageAdapter(this));

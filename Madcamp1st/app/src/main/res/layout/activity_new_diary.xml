@@ -61,8 +61,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:progressBackgroundTint="#BCBCB8"
-        android:progressTint="#FFFF00"
-        android:secondaryProgressTint="#FFE60B" />
+        android:progressTint="#F2D230"
+        android:secondaryProgressTint="#F2C335" />
 
     <EditText
         android:id="@+id/daily_comment"
@@ -82,5 +82,6 @@
         android:layout_height="60dp"
         android:textSize="20dp"
         android:text="Save"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="10dp"
+        android:backgroundTint="@color/red_700"/>
 </LinearLayout>
