@@ -3,9 +3,13 @@ package com.example.madcamp1st;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MainActivity extends FragmentActivity {
@@ -32,5 +36,8 @@ public class MainActivity extends FragmentActivity {
             imgView.setPadding(10, 10, 10, 10);
             tab.setCustomView(imgView);
         }).attach();
+
+        Intent intent = new Intent(getApplicationContext(), LogInActivity.class);
+        startActivity(intent);
     }
 }
