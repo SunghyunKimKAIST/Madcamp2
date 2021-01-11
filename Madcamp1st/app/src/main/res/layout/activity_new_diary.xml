@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF"
     android:orientation="vertical"
-    tools:context=".Fragment_Diary">
+    tools:context=".diary.Fragment_Diary">
 
     <Button
         android:id="@+id/date_button"

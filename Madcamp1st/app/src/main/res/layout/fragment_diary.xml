@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#FFFFFF"
     android:orientation="vertical"
-    tools:context=".Fragment_Diary">
+    tools:context=".diary.Fragment_Diary">
     <CalendarView
         android:id="@+id/diary_calendar"
         android:layout_width="wrap_content"

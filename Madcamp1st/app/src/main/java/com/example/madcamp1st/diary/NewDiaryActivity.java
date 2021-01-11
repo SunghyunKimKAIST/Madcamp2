@@ -5,16 +5,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RatingBar;
 import android.widget.Toast;
@@ -23,7 +18,6 @@ import com.example.madcamp1st.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 
 public class NewDiaryActivity extends AppCompatActivity {
 
@@ -45,9 +39,12 @@ public class NewDiaryActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일");
 
         Intent i = getIntent();
-        int request = i.getIntExtra("request_code", 2);
         actionBar.setTitle("New diary");
         Calendar calendar = Calendar.getInstance();
+        // Remove time from calendar
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
 
         dateButton.setText(dateFormat.format(calendar.getTime()));
         dateButton.setOnClickListener(new View.OnClickListener() {
@@ -82,13 +79,29 @@ public class NewDiaryActivity extends AppCompatActivity {
                     return;
                 }
 
+                int weather = -1;
+                switch (radioGroup.getCheckedRadioButtonId()) {
+                    case R.id.sunny:
+                        weather = 0;
+                        break;
+                    case R.id.overcast:
+                        weather = 1;
+                        break;
+                    case R.id.cloudy:
+                        weather = 2;
+                        break;
+                    case R.id.rainy:
+                        weather = 3;
+                        break;
+                    case R.id.snowy:
+                        weather = 4;
+                        break;
+                }
+
+                Page page = new Page(calendar.getTime(), weather, ratingBar.getRating(), editText.getText().toString());
+
                 Intent i = new Intent();
-                Bundle bundle = new Bundle();
-                i.putExtra("date", calendar.getTimeInMillis());
-//                    i.putExtra("date", calendar.getTime());
-                i.putExtra("weather", radioGroup.getCheckedRadioButtonId());
-                i.putExtra("comment", editText.getText().toString());
-                i.putExtra("rating", ratingBar.getRating());
+                i.putExtra("page", page);
                 setResult(RESULT_OK, i);
                 finish();
             }
