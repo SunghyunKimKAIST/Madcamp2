@@ -16,18 +16,18 @@ public interface DiaryService {
     @GET("api/pages")
     Call<List<Page>> getAllPages();
 
-    @GET("api/pages/{date}")
-    Call<Page> getPage(@Path("date") String date);
+    @GET("api/pages/{fid}/{date}")
+    Call<Page> getPage(@Path("fid") String fid, @Path("date") String date);
 
-    @GET("api/pages/average")
-    Call<ResponseBody> getAverageRating();
+    @GET("api/pages/average/{fid}")
+    Call<ResponseBody> getAverageRating(@Path("fid") String fid);
 
     @POST("api/pages")
     Call<ResponseBody> createPage(@Body Page page);
 
-    @PUT("api/pages/{date}")
-    Call<ResponseBody> updatePage(@Path("date") Date date, @Body Page page);
+    @PUT("api/pages/{fid}/{date}")
+    Call<ResponseBody> updatePage(@Path("fid") String fid, @Path("date") Date date, @Body Page page);
 
-    @DELETE("api/pages/{date}")
-    Call<ResponseBody> deletePage(@Path("date") Date date);
+    @DELETE("api/pages/{fid}/{date}")
+    Call<ResponseBody> deletePage(@Path("fid") String fid, @Path("date") Date date);
 }

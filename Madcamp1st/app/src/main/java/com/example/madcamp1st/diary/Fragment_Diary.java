@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.madcamp1st.R;
+import com.facebook.Profile;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
@@ -158,11 +159,11 @@ public class Fragment_Diary extends Fragment {
             page = (Page) data.getSerializableExtra("page");
             action = data.getIntExtra("action", -1);
             if (action == 0) {
-                diaryService.updatePage(page.date, page).enqueue(new Callback<ResponseBody>() {
+                diaryService.updatePage(Profile.getCurrentProfile().getId(), page.date, page).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                         if (!response.isSuccessful()) {
-                            Toast.makeText(getContext(), "editPage: 페이지를 수정하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "editPage: 페이지를 수정하는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -172,7 +173,7 @@ public class Fragment_Diary extends Fragment {
                     }
                 });
             } else if (action == 1) {
-                diaryService.deletePage(page.date).enqueue(new Callback<ResponseBody>() {
+                diaryService.deletePage(Profile.getCurrentProfile().getId(), page.date).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                         if (!response.isSuccessful()) {
@@ -193,7 +194,7 @@ public class Fragment_Diary extends Fragment {
     }
 
     private void updateAverageRating() {
-        diaryService.getAverageRating().enqueue(new Callback<ResponseBody>() {
+        diaryService.getAverageRating(Profile.getCurrentProfile().getId()).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful()) {
@@ -217,7 +218,7 @@ public class Fragment_Diary extends Fragment {
     }
 
     private void updateCommentAndRating(int year, int month, int dayOfMonth) {
-        diaryService.getPage(String.format("%s-%s-%s", year, month, dayOfMonth)).enqueue(new Callback<Page>() {
+        diaryService.getPage(Profile.getCurrentProfile().getId(), String.format("%s-%s-%s", year, month, dayOfMonth)).enqueue(new Callback<Page>() {
             @Override
             public void onResponse(Call<Page> call, Response<Page> response) {
                 if (response.isSuccessful()) {

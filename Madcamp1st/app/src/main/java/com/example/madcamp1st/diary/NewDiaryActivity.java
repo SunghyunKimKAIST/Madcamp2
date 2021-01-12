@@ -15,6 +15,7 @@ import android.widget.RatingBar;
 import android.widget.Toast;
 
 import com.example.madcamp1st.R;
+import com.facebook.Profile;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -113,13 +114,13 @@ public class NewDiaryActivity extends AppCompatActivity {
                         break;
                 }
                 String calToStr = String.format("%s-%s-%s", calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH));
-                diaryService.getPage(calToStr).enqueue(new Callback<Page>() {
+                diaryService.getPage(Profile.getCurrentProfile().getId(), calToStr).enqueue(new Callback<Page>() {
                     @Override
                     public void onResponse(Call<Page> call, Response<Page> response) {
                         if (response.isSuccessful()) {
                             Toast.makeText(getApplicationContext(), "선택한 날짜에 이미 작성한 일기가 있습니다.", Toast.LENGTH_SHORT).show();
                         } else {
-                            Page page = new Page(calendar.getTime(), weather, ratingBar.getRating(), editText.getText().toString());
+                            Page page = new Page(calendar.getTime(), weather, ratingBar.getRating(), editText.getText().toString(), Profile.getCurrentProfile().getId());
 
                             Intent i = new Intent();
                             i.putExtra("page", page);
