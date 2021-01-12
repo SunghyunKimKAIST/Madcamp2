@@ -1,13 +1,19 @@
 package com.example.madcamp1st.images;
 
-import android.net.Uri;
+import com.google.gson.annotations.SerializedName;
+
+import java.io.File;
 
 public class Image {
-    final Uri uri;
-    final String name;
+    @SerializedName("filename")
+    public String name;
 
-    public Image(Uri uri, String name) {
-        this.uri = uri;
+    public transient File original;
+    public transient File thumbnail;
+
+    public Image(String name, File original, File thumbnail){
         this.name = name;
+        this.original = original;
+        this.thumbnail = thumbnail;
     }
 }

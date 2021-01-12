@@ -15,7 +15,7 @@ import java.io.File;
 import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
-    private List<File> imageFilepaths;
+    private List<Image> imageFilepaths;
 
     public static class ImageViewHolder extends RecyclerView.ViewHolder {
         public ImageView imageView;
@@ -26,11 +26,11 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
     }
 
-    public ImageAdapter(List<File> imageFilepaths) {
+    public ImageAdapter(List<Image> imageFilepaths) {
         this.imageFilepaths = imageFilepaths;
     }
 
-    public void updateImages(List<File> imageFilepaths){
+    public void updateImages(List<Image> imageFilepaths){
         this.imageFilepaths = imageFilepaths;
         notifyDataSetChanged();
     }
@@ -46,9 +46,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
     @Override
     public void onBindViewHolder(ImageViewHolder holder, int position) {
-        File imageFilepath = imageFilepaths.get(position);
+        Image image = imageFilepaths.get(position);
 
-        holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFilepath.getPath()));
+        holder.imageView.setImageBitmap(BitmapFactory.decodeFile(image.thumbnail.getPath()));
     }
 
     @Override

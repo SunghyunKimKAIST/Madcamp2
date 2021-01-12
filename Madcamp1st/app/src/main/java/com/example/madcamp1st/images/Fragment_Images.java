@@ -3,9 +3,12 @@ package com.example.madcamp1st.images;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,14 +27,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.stream.Collectors;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -48,8 +49,9 @@ public class Fragment_Images extends Fragment {
     private View mView;
     private ImageAdapter mAdapter;
 
-    private List<File> internalImageFilepaths;
-    private final String imagesDirectoryName = "images";
+    private List<Image> internalImageFilepaths;
+    private final String ORIGINAL_DIRECTORY_NAME = "original";
+    private final String THUMBNAIL_DIRECTORY_NAME = "thumbnail";
 
     private final String DB_URL = "http://192.249.18.163:1234/";
     private ImageService imageService;
@@ -82,23 +84,21 @@ public class Fragment_Images extends Fragment {
                 .build()
                 .create(ImageService.class);
 
-        Call<List<ImageFileName>> call = imageService.getAllImageName();
+        Call<List<Image>> call = imageService.getAllImageName();
 
-        call.enqueue(new Callback<List<ImageFileName>>() {
+        call.enqueue(new Callback<List<Image>>() {
             @Override
             @EverythingIsNonNull
-            public void onResponse(Call<List<ImageFileName>> call, Response<List<ImageFileName>> response) {
-                if(response.isSuccessful()){
-                    List<String> dbImageNames = response.body().stream().map(imageFileName -> imageFileName.name).collect(Collectors.toList());
-
-                    syncImages(internalImageFilepaths, dbImageNames);
-                } else
+            public void onResponse(Call<List<Image>> call, Response<List<Image>> response) {
+                if(response.isSuccessful())
+                    syncImages(internalImageFilepaths, response.body());
+                else
                     Toast.makeText(getContext(), "getAllImageName: DB에서 이미지 리스트를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
 
             @Override
             @EverythingIsNonNull
-            public void onFailure(Call<List<ImageFileName>> call, Throwable t) {
+            public void onFailure(Call<List<Image>> call, Throwable t) {
                 Toast.makeText(getContext(), "getAllImageName: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
             }
         });
@@ -116,28 +116,40 @@ public class Fragment_Images extends Fragment {
 
         if(requestCode == REQUEST_GET_IMAGE && resultCode == Activity.RESULT_OK){
             Uri uri = data.getData();
-            File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
-            File file = new File(directory, getFileNameFromUri(uri));
+            String name = getFileNameFromUri(uri);
 
-            try(InputStream is = getContext().getContentResolver().openInputStream(uri)){
-                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            File original = new File(new File(getContext().getFilesDir(), ORIGINAL_DIRECTORY_NAME), name);
+            File thumbnail = new File(new File(getContext().getFilesDir(), THUMBNAIL_DIRECTORY_NAME), name);
+
+            try(InputStream originalIS = getContext().getContentResolver().openInputStream(uri)){
+                Files.copy(originalIS, original.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                if(!thumbnail.exists())
+                    thumbnail.createNewFile();
+
+                try(FileOutputStream thumbnailFOS = new FileOutputStream(thumbnail)){
+                    getContext().getContentResolver().loadThumbnail(uri, new Size(360, 360), null).compress(Bitmap.CompressFormat.PNG, 100, thumbnailFOS);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 Toast.makeText(getContext(), "get image from internal gallery error: IOException", Toast.LENGTH_SHORT).show();
 
-                if(file.exists())
-                    file.delete();
+                if(original.exists())
+                    original.delete();
+
+                if(thumbnail.exists())
+                    thumbnail.delete();
 
                 return;
             }
 
-            internalImageFilepaths.add(file);
-            internalImageFilepaths.sort((l, r) -> l.getName().compareTo(r.getName()));
+            internalImageFilepaths.add(new Image(name, original, thumbnail));
+            internalImageFilepaths.sort((l, r) -> l.name.compareTo(r.name));
             mAdapter.updateImages(internalImageFilepaths);
         }
     }
 
-    // 이거 꼭 써야함? 모르겠음
+    // 이거 꼭 써야함? 모르겠음. 일단 잘 굴러가니까 씀
     // https://stackoverflow.com/questions/5568874/how-to-extract-the-file-name-from-uri-returned-from-intent-action-get-content
     private String getFileNameFromUri(Uri uri) {
         String result = null;
@@ -161,21 +173,35 @@ public class Fragment_Images extends Fragment {
         return result;
     }
 
-    private List<File> loadInternalImageFilepaths(){
-        File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
+    private List<Image> loadInternalImageFilepaths(){
+        File originalDirectory = new File(getContext().getFilesDir(), ORIGINAL_DIRECTORY_NAME);
+        File thumbnailDirectory = new File(getContext().getFilesDir(), THUMBNAIL_DIRECTORY_NAME);
 
-        if(!directory.exists())
-            directory.mkdir();
+        if(!originalDirectory.exists())
+            originalDirectory.mkdir();
 
-        File[] listFiles = directory.listFiles();
+        if(!thumbnailDirectory.exists())
+            thumbnailDirectory.mkdir();
 
-        if(listFiles == null) {
+        File[] originalFiles = originalDirectory.listFiles();
+        File[] thumbnailFiles = thumbnailDirectory.listFiles();
+
+        if(originalFiles == null || thumbnailFiles == null) {
             Toast.makeText(getContext(), "loadInternalImageFilepaths error", Toast.LENGTH_LONG).show();
             return new ArrayList<>();
         }
 
-        List<File> res = new ArrayList<>(Arrays.asList(listFiles));
-        res.sort((l, r) -> l.getName().compareTo(r.getName()));
+        if(originalFiles.length != thumbnailFiles.length) {
+            Toast.makeText(getContext(), "original file number does not equals with thumbnail file number", Toast.LENGTH_LONG).show();
+            return new ArrayList<>();
+        }
+
+        List<Image> res = new ArrayList<>();
+
+        for(int i = 0; i < originalFiles.length; i++)
+            res.add(new Image(originalFiles[i].getName(), originalFiles[i], thumbnailFiles[i]));
+
+        res.sort((l, r) -> l.name.compareTo(r.name));
 
         return res;
     }
@@ -187,26 +213,33 @@ public class Fragment_Images extends Fragment {
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if(response.isSuccessful()) {
-                    File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
-                    File file = new File(directory, imageFilepath);
+                    File original = new File(new File(getContext().getFilesDir(), ORIGINAL_DIRECTORY_NAME), imageFilepath);
+                    File thumbnail = new File(new File(getContext().getFilesDir(), THUMBNAIL_DIRECTORY_NAME), imageFilepath);
 
                     try {
-                        if (!file.exists())
-                            file.createNewFile();
-
-                        try(FileOutputStream fos = new FileOutputStream(file)){
-                            fos.write(response.body().bytes());
-
-                            internalImageFilepaths.add(file);
-                            internalImageFilepaths.sort((l, r) -> l.getName().compareTo(r.getName()));
-                            mAdapter.updateImages(internalImageFilepaths);
+                        try(InputStream responseIS = response.body().byteStream()) {
+                            Files.copy(responseIS, original.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         }
+
+                        if(!thumbnail.exists())
+                            thumbnail.createNewFile();
+
+                        try(OutputStream thumbnailOS = new FileOutputStream(thumbnail)) {
+                            decodeThumbnailFromFile(original.getPath(), 360, 360).compress(Bitmap.CompressFormat.PNG, 100, thumbnailOS);
+                        }
+
+                        internalImageFilepaths.add(new Image(imageFilepath, original, thumbnail));
+                        internalImageFilepaths.sort((l, r) -> l.name.compareTo(r.name));
+                        mAdapter.updateImages(internalImageFilepaths);
                     }catch (IOException e){
                         e.printStackTrace();
                         Toast.makeText(getContext(), "getImage: DB에서 가져온 이미지를 저장하는데 실패했습니다", Toast.LENGTH_LONG).show();
 
-                        if(file.exists())
-                            file.delete();
+                        if(original.exists())
+                            original.delete();
+
+                        if(thumbnail.exists())
+                            thumbnail.delete();
                     }
                 }
                 else
@@ -221,11 +254,45 @@ public class Fragment_Images extends Fragment {
         });
     }
 
-    private void dbCreateImage(File internalImageFilepath){
-        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(internalImageFilepath.toURI().toString()));
-        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), internalImageFilepath);
+    // copied from android document
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
 
-        MultipartBody.Part body = MultipartBody.Part.createFormData("image", internalImageFilepath.getName(), requestFile);
+        if (height > reqHeight || width > reqWidth) {
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth)
+                inSampleSize *= 2;
+        }
+
+        return inSampleSize;
+    }
+
+    private Bitmap decodeThumbnailFromFile(String pathName, int reqWidth, int reqHeight) {
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(pathName, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeFile(pathName, options);
+    }
+
+    private void dbCreateImage(File originalFile){
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(originalFile.toURI().toString()));
+        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), originalFile);
+
+        MultipartBody.Part body = MultipartBody.Part.createFormData("image", originalFile.getName(), requestFile);
 
         RequestBody description = RequestBody.create(MultipartBody.FORM, "description");
 
@@ -252,42 +319,42 @@ public class Fragment_Images extends Fragment {
             return null;
     }
 
-    private void syncImages(List<File> internalImageFilepaths, List<String> dbImageNames){
-        dbImageNames.sort(null);
+    private void syncImages(List<Image> internalImages, List<Image> dbImages){
+        dbImages.sort((l, r) -> l.name.compareTo(r.name));
 
-        ListIterator<File> internalIterator = internalImageFilepaths.listIterator();
-        Iterator<String> dbIterator = dbImageNames.iterator();
+        Iterator<Image> internalIterator = internalImages.listIterator();
+        Iterator<Image> dbIterator = dbImages.iterator();
 
-        File internalImageFilepath = nextOrNull(internalIterator);
-        String dbImageName = nextOrNull(dbIterator);
+        Image internalImage = nextOrNull(internalIterator);
+        Image dbImage = nextOrNull(dbIterator);
 
-        while(internalImageFilepath != null && dbImageName != null){
-            int compare = internalImageFilepath.getName().compareTo(dbImageName);
+        while(internalImage != null && dbImage != null){
+            int compare = internalImage.name.compareTo(dbImage.name);
 
             if(compare == 0){
-                internalImageFilepath = nextOrNull(internalIterator);
-                dbImageName = nextOrNull(dbIterator);
+                internalImage = nextOrNull(internalIterator);
+                dbImage = nextOrNull(dbIterator);
             } else if(compare < 0) {
-                dbCreateImage(internalImageFilepath);
+                dbCreateImage(internalImage.original);
 
-                internalImageFilepath = nextOrNull(internalIterator);
+                internalImage = nextOrNull(internalIterator);
             } else{
-                getDBImageAndStoreAsync(dbImageName);
+                getDBImageAndStoreAsync(dbImage.name);
 
-                dbImageName = nextOrNull(dbIterator);
+                dbImage = nextOrNull(dbIterator);
             }
         }
 
-        while(internalImageFilepath != null){
-            dbCreateImage(internalImageFilepath);
+        while(internalImage != null){
+            dbCreateImage(internalImage.original);
 
-            internalImageFilepath = nextOrNull(internalIterator);
+            internalImage = nextOrNull(internalIterator);
         }
 
-        while(dbImageName != null){
-            getDBImageAndStoreAsync(dbImageName);
+        while(dbImage != null){
+            getDBImageAndStoreAsync(dbImage.name);
 
-            dbImageName = nextOrNull(dbIterator);
+            dbImage = nextOrNull(dbIterator);
         }
     }
 }

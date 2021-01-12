@@ -14,7 +14,7 @@ import retrofit2.http.Path;
 
 public interface ImageService {
     @GET("api/images")
-    Call<List<ImageFileName>> getAllImageName();
+    Call<List<Image>> getAllImageName();
 
     @GET("api/images/{filename}")
     Call<ResponseBody> getImage(@Path("filename") String filename);
