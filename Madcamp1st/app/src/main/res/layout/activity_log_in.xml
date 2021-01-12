@@ -19,6 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="100dp"
-        android:text="오프라인에서 계속하기"/>
+        android:text="계정 없이 계속하기"
+        android:onClick="finishWithoutLogin"/>
 
 </FrameLayout>

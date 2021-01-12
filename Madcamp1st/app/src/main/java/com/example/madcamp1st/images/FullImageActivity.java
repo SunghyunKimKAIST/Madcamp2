@@ -1,19 +1,15 @@
 package com.example.madcamp1st.images;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.madcamp1st.R;
 import com.github.chrisbanes.photoview.PhotoView;
-
-import java.io.File;
 
 public class FullImageActivity extends AppCompatActivity {
     private int position;
@@ -41,9 +37,7 @@ public class FullImageActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.delete) {
-            Intent intent = new Intent();
-            intent.putExtra("deleted", position);
-            setResult(RESULT_OK, intent);
+            setResult(RESULT_OK, new Intent().putExtra("deleted", position));
             finish();
             return true;
         }

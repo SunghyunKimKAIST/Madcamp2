@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madcamp1st.MainActivity;
 import com.example.madcamp1st.MyResponse;
 import com.example.madcamp1st.R;
 
@@ -47,6 +48,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.internal.EverythingIsNonNull;
 
 public class Fragment_Images extends Fragment {
+    private MainActivity mainActivity;
+
     private View mView;
     private ImageAdapter mAdapter;
 
@@ -70,6 +73,8 @@ public class Fragment_Images extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mainActivity = (MainActivity)getActivity();
+
         internalImageFilepaths = loadInternalImageFilepaths();
 
         // recyclerview
@@ -86,24 +91,7 @@ public class Fragment_Images extends Fragment {
                 .build()
                 .create(ImageService.class);
 
-        Call<List<Image>> call = imageService.getAllImageName();
-
-        call.enqueue(new Callback<List<Image>>() {
-            @Override
-            @EverythingIsNonNull
-            public void onResponse(Call<List<Image>> call, Response<List<Image>> response) {
-                if(response.isSuccessful())
-                    syncImages(internalImageFilepaths, response.body());
-                else
-                    Toast.makeText(getContext(), "getAllImageName: DB에서 이미지 리스트를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            @EverythingIsNonNull
-            public void onFailure(Call<List<Image>> call, Throwable t) {
-                Toast.makeText(getContext(), "getAllImageName: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
-            }
-        });
+        syncImages();
 
         mView.findViewById(R.id.button_get_image).setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -161,6 +149,8 @@ public class Fragment_Images extends Fragment {
                     @Override
                     @EverythingIsNonNull
                     public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                        mainActivity.setCurrentConnected(true);
+
                         if(!response.isSuccessful())
                             Toast.makeText(getContext(), "delete image: 이미지를 DB에서 삭제하는데 실패했습니다\nHTTP status code:" + response.code(), Toast.LENGTH_LONG).show();
                     }
@@ -168,7 +158,7 @@ public class Fragment_Images extends Fragment {
                     @Override
                     @EverythingIsNonNull
                     public void onFailure(Call<MyResponse> call, Throwable t) {
-                        Toast.makeText(getContext(), "delete image: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                        mainActivity.setCurrentConnected(false);
                     }
                 });
             }
@@ -238,6 +228,8 @@ public class Fragment_Images extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if(response.isSuccessful()) {
                     File original = new File(new File(getContext().getFilesDir(), ORIGINAL_DIRECTORY_NAME), imageFilepath);
                     File thumbnail = new File(new File(getContext().getFilesDir(), THUMBNAIL_DIRECTORY_NAME), imageFilepath);
@@ -275,7 +267,7 @@ public class Fragment_Images extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(getContext(), "getImage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
     }
@@ -326,6 +318,8 @@ public class Fragment_Images extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if(!response.isSuccessful())
                     Toast.makeText(getContext(), "dbPostImage: DB에 이미지를 업로드하는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
@@ -333,7 +327,7 @@ public class Fragment_Images extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(getContext(), "dbPostImage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
     }
@@ -345,7 +339,7 @@ public class Fragment_Images extends Fragment {
             return null;
     }
 
-    private void syncImages(List<Image> internalImages, List<Image> dbImages){
+    private void syncImagesHelper(List<Image> internalImages, List<Image> dbImages){
         dbImages.sort(null);
 
         Iterator<Image> internalIterator = internalImages.listIterator();
@@ -382,5 +376,26 @@ public class Fragment_Images extends Fragment {
 
             dbImage = nextOrNull(dbIterator);
         }
+    }
+
+    public void syncImages(){
+        imageService.getAllImageName().enqueue(new Callback<List<Image>>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<List<Image>> call, Response<List<Image>> response) {
+                mainActivity.setCurrentConnected(true);
+
+                if(response.isSuccessful())
+                    syncImagesHelper(internalImageFilepaths, response.body());
+                else
+                    Toast.makeText(getContext(), "getAllImageName: DB에서 이미지 리스트를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<List<Image>> call, Throwable t) {
+                mainActivity.setCurrentConnected(false);
+            }
+        });
     }
 }

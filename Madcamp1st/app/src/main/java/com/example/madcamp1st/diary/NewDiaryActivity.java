@@ -123,6 +123,7 @@ public class NewDiaryActivity extends AppCompatActivity {
 
                             Intent i = new Intent();
                             i.putExtra("page", page);
+                            i.putExtra("connected", 1);
                             setResult(RESULT_OK, i);
                             finish();
                         }
@@ -131,6 +132,11 @@ public class NewDiaryActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<Page> call, Throwable t) {
                         Toast.makeText(getApplicationContext(), "서버에 연결할 수 없습니다.", Toast.LENGTH_SHORT).show();
+
+                        Intent i = new Intent();
+                        i.putExtra("connected", 0);
+                        setResult(RESULT_CANCELED, i);
+                        finish();
                     }
                 });
 

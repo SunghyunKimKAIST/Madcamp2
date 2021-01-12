@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,14 +19,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SearchView;
 
-import com.example.madcamp1st.DeleteCallback;
+import com.example.madcamp1st.MainActivity;
 import com.example.madcamp1st.MyResponse;
 import com.example.madcamp1st.R;
+import com.facebook.Profile;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,10 +48,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.internal.EverythingIsNonNull;
 
 public class Fragment_Contacts extends Fragment {
+    private MainActivity mainActivity;
+
     private View mView;
     private ContactAdapter mAdapter;
-    private Button internetButton;
-    private boolean isConnected;
 
     private Gson gson;
 
@@ -88,9 +87,7 @@ public class Fragment_Contacts extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        isConnected = false;
-        internetButton = mView.findViewById(R.id.contact_internet_button);
-        internetButton.setText("Disconnected");
+        mainActivity = (MainActivity)getActivity();
 
         gson = new Gson();
 
@@ -112,28 +109,7 @@ public class Fragment_Contacts extends Fragment {
                 .build()
                 .create(ContactService.class);
 
-        contactService.getAllNewerContacts(timestamp.format(DateTimeFormatter.ISO_INSTANT)).enqueue(new Callback<List<Contact>>() {
-            @Override
-            @EverythingIsNonNull
-            public void onResponse(Call<List<Contact>> call, Response<List<Contact>> response) {
-                if (response.isSuccessful()) {
-                    List<Contact> dbContacts = response.body();
-
-                    internalContacts = syncContacts(internalContacts, dbContacts);
-                    mAdapter.updateContacts(internalContacts);
-
-                    isConnected = true;
-                    internetButton.setText("Connected");
-                } else
-                    Toast.makeText(getContext(), "getAllNewerContacts: DB에서 연락처를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            @EverythingIsNonNull
-            public void onFailure(Call<List<Contact>> call, Throwable t) {
-                Toast.makeText(getContext(), "getAllNewerContacts: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
-            }
-        });
+        syncContacts();
 
         // searchview
         ((SearchView)mView.findViewById(R.id.searchView_contacts)).setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -261,6 +237,8 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if(response.isSuccessful()){
                     if(response.body().result != 1) {
                         Toast.makeText(getContext(), "createContactDBAsync: DB error", Toast.LENGTH_LONG).show();
@@ -269,6 +247,7 @@ public class Fragment_Contacts extends Fragment {
                             syncFlag.update = contact.getTimestamp();
                     }
                 }else {
+                    Profile.getCurrentProfile().getId();
                     Toast.makeText(getContext(), "createContactDBAsync: DB에 연락처를 업로드하는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
 
                     if(contact.getTimestamp().isBefore(syncFlag.update))
@@ -286,7 +265,7 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<MyResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "createContactDBAsync: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                mainActivity.setCurrentConnected(false);
 
                 if(contact.getTimestamp().isBefore(syncFlag.update))
                     syncFlag.update = contact.getTimestamp();
@@ -306,6 +285,8 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if(response.isSuccessful()){
                     if(!"person updated".equals(response.body().message)) {
                         Toast.makeText(getContext(), "updateContactDBAsync: " + response.code() + "\n" + response.body().error, Toast.LENGTH_LONG).show();
@@ -331,7 +312,7 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<MyResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "updateContactDBAsync: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                mainActivity.setCurrentConnected(false);
 
                 if(contact.getTimestamp().isBefore(syncFlag.update))
                     syncFlag.update = contact.getTimestamp();
@@ -353,6 +334,8 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if(!response.isSuccessful())
                     Toast.makeText(getContext(), "delete contact: 연락처를 DB에서 삭제하는데 실패했습니다\nHTTP status code:" + response.code(), Toast.LENGTH_LONG).show();
             }
@@ -360,7 +343,7 @@ public class Fragment_Contacts extends Fragment {
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<MyResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "delete contact: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
 
@@ -376,7 +359,7 @@ public class Fragment_Contacts extends Fragment {
     }
 
     // 동시성 문제 존재
-    private List<Contact> syncContacts(List<Contact> internalContacts, List<Contact> dbContacts){
+    private void syncContactsHelper(List<Contact> internalContacts, List<Contact> dbContacts){
         boolean flag = true;
         ZonedDateTime now = ZonedDateTime.now();
         SyncFlag syncFlag = new SyncFlag(0, now);
@@ -448,7 +431,29 @@ public class Fragment_Contacts extends Fragment {
             storeTimestamp(timestamp);
             storeContactsToInternal(internalContacts);
         }
+    }
 
-        return internalContacts;
+    public void syncContacts(){
+        contactService.getAllNewerContacts(timestamp.format(DateTimeFormatter.ISO_INSTANT)).enqueue(new Callback<List<Contact>>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<List<Contact>> call, Response<List<Contact>> response) {
+                mainActivity.setCurrentConnected(true);
+
+                if (response.isSuccessful()) {
+                    List<Contact> dbContacts = response.body();
+
+                    syncContactsHelper(internalContacts, dbContacts);
+                    mAdapter.updateContacts(internalContacts);
+                } else
+                    Toast.makeText(getContext(), "getAllNewerContacts: DB에서 연락처를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<List<Contact>> call, Throwable t) {
+                mainActivity.setCurrentConnected(false);
+            }
+        });
     }
 }

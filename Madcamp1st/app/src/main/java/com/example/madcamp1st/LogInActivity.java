@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -23,18 +25,17 @@ public class LogInActivity extends AppCompatActivity {
 
         getSupportActionBar().hide();
 
-        // FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(getApplication());
 
         callbackManager = CallbackManager.Factory.create();
 
         LoginButton loginButton = findViewById(R.id.login_button);
-        // loginButton.setPermissions("email");
 
         // Callback registration
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
+                setResult(RESULT_OK);
                 finish();
             }
 
@@ -42,12 +43,16 @@ public class LogInActivity extends AppCompatActivity {
             public void onCancel() { }
 
             @Override
-            public void onError(FacebookException exception) { }
+            public void onError(FacebookException exception) {
+                Toast.makeText(getApplicationContext(), exception.toString(), Toast.LENGTH_LONG).show();
+            }
         });
 
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
-        if(accessToken != null && !accessToken.isExpired())
+        if(accessToken != null && !accessToken.isExpired()) {
+            setResult(RESULT_OK);
             finish();
+        }
     }
 
     @Override
@@ -55,6 +60,11 @@ public class LogInActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void finishWithoutLogin(View view){
+        setResult(RESULT_OK);
+        finish();
     }
 
     @Override

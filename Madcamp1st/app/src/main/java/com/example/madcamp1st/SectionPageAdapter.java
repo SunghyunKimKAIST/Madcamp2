@@ -14,6 +14,9 @@ import com.example.madcamp1st.diary.Fragment_Diary;
 import com.example.madcamp1st.images.Fragment_Images;
 
 public class SectionPageAdapter extends FragmentStateAdapter {
+    public Fragment_Contacts fragment_contacts;
+    public Fragment_Images fragment_images;
+
     public SectionPageAdapter(FragmentActivity fa) {
         super(fa);
     }
@@ -23,9 +26,11 @@ public class SectionPageAdapter extends FragmentStateAdapter {
     public Fragment createFragment(int position) {
         switch(position) {
             case 0:
-                return new Fragment_Contacts();
+                fragment_contacts = new Fragment_Contacts();
+                return fragment_contacts;
             case 1:
-                return new Fragment_Images();
+                fragment_images = new Fragment_Images();
+                return fragment_images;
             case 2:
                 return new Fragment_Diary();
         }

@@ -7,6 +7,7 @@ import java.io.File;
 public class Image implements Comparable<Image>{
     @SerializedName("filename")
     public String name;
+    public String fid;
 
     public transient File original;
     public transient File thumbnail;

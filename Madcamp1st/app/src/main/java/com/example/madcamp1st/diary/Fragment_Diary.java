@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.example.madcamp1st.MainActivity;
 import com.example.madcamp1st.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -30,6 +31,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class Fragment_Diary extends Fragment {
+    private MainActivity mainActivity;
 
     private View view;
 
@@ -62,6 +64,8 @@ public class Fragment_Diary extends Fragment {
 
         view = inflater.inflate(R.layout.fragment_diary, container, false);
 
+        mainActivity = (MainActivity)getActivity();
+
         diaryService = new Retrofit.Builder()
                 .baseUrl(DB_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -71,6 +75,8 @@ public class Fragment_Diary extends Fragment {
         diaryService.getAllPages().enqueue(new Callback<List<Page>>() {
             @Override
             public void onResponse(Call<List<Page>> call, Response<List<Page>> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if (response.isSuccessful()) {
                     internalPages = response.body();
                 } else {
@@ -80,7 +86,7 @@ public class Fragment_Diary extends Fragment {
 
             @Override
             public void onFailure(Call<List<Page>> call, Throwable t) {
-                Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
 
@@ -137,11 +143,21 @@ public class Fragment_Diary extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        switch (data.getIntExtra("connected", -1)){
+            case 1:
+                mainActivity.setCurrentConnected(true);
+                break;
+            case 0:
+                mainActivity.setCurrentConnected(false);
+        }
+
         Page page = (Page) data.getSerializableExtra("page");
         if (requestCode == REQUEST_CREATE_PAGE && resultCode == Activity.RESULT_OK) {
             diaryService.createPage(page).enqueue(new Callback<ResponseBody>() {
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    mainActivity.setCurrentConnected(true);
+
                     if (!response.isSuccessful()) {
                         Toast.makeText(getContext(), "createPage: 새로운 페이지를 추가하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
                     }
@@ -149,7 +165,7 @@ public class Fragment_Diary extends Fragment {
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Toast.makeText(getContext(), "createPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
+                    mainActivity.setCurrentConnected(false);
                 }
             });
         } else if (requestCode == REQUEST_EDIT_PAGE) {
@@ -159,6 +175,8 @@ public class Fragment_Diary extends Fragment {
                 diaryService.updatePage(page.date, page).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        mainActivity.setCurrentConnected(true);
+
                         if (!response.isSuccessful()) {
                             Toast.makeText(getContext(), "editPage: 페이지를 수정하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
                         }
@@ -166,7 +184,7 @@ public class Fragment_Diary extends Fragment {
 
                     @Override
                     public void onFailure(Call<ResponseBody> call, Throwable t) {
-                        Toast.makeText(getContext(), "editPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
+                        mainActivity.setCurrentConnected(false);
                     }
                 });
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -174,13 +192,15 @@ public class Fragment_Diary extends Fragment {
                 diaryService.deletePage(page.date).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        mainActivity.setCurrentConnected(true);
+
                         if (!response.isSuccessful()) {
                             Toast.makeText(getContext(), "deletePage: 페이지를 삭제하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
                         }
                     }
                     @Override
                     public void onFailure(Call<ResponseBody> call, Throwable t) {
-                        Toast.makeText(getContext(), "deletePage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
+                        mainActivity.setCurrentConnected(false);
                     }
                 });
             }
@@ -195,6 +215,8 @@ public class Fragment_Diary extends Fragment {
         diaryService.getAverageRating().enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if (response.isSuccessful()) {
                     try {
                         String res = response.body().string();
@@ -210,7 +232,7 @@ public class Fragment_Diary extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(getContext(), "getAverage: DB에서 값을 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
     }
@@ -219,6 +241,8 @@ public class Fragment_Diary extends Fragment {
         diaryService.getPage(String.format("%s-%s-%s", year, month, dayOfMonth)).enqueue(new Callback<Page>() {
             @Override
             public void onResponse(Call<Page> call, Response<Page> response) {
+                mainActivity.setCurrentConnected(true);
+
                 if (response.isSuccessful()) {
                     selectedPage = response.body();
                     ratingBar.setVisibility(RatingBar.VISIBLE);
@@ -234,7 +258,7 @@ public class Fragment_Diary extends Fragment {
 
             @Override
             public void onFailure(Call<Page> call, Throwable t) {
-                Toast.makeText(getContext(), "getPage: DB에서 페이지를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                mainActivity.setCurrentConnected(false);
             }
         });
     }

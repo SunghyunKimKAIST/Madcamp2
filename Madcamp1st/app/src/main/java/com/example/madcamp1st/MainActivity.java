@@ -6,10 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -19,40 +21,52 @@ import com.facebook.login.LoginManager;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MainActivity extends AppCompatActivity {
+    private SectionPageAdapter mAdapter;
     private ActionBar actionBar;
     private ProfileTracker profileTracker;
 
     @StringRes private static final int[] TAB_TITLES = new int[] {R.string.tab_text_1, R.string.tab_text_2, R.string.tab_text_3};
     private final int REQUEST_FACEBOOK_LOGIN = 0;
 
+    private Button internetButton;
+    private boolean isConnected = false;
+
+    public void setCurrentConnected(boolean isConnected){
+        if(this.isConnected != isConnected) {
+            if(isConnected) {
+                internetButton.setText("Online");
+                //internetButton.setBackgroundColor(Color.GREEN);
+            }
+            else {
+                internetButton.setText("Offline");
+                //internetButton.setBackgroundColor(Color.GREEN);
+            }
+        }
+        this.isConnected = isConnected;
+    }
+
+    public void reconnectToInternet(View view){
+        if(!isConnected){
+            mAdapter.fragment_contacts.syncContacts();
+            mAdapter.fragment_images.syncImages();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(com.example.madcamp1st.R.layout.activity_main);
 
+        internetButton = findViewById(R.id.internet_button);
+
         actionBar = getSupportActionBar();
 
         ViewPager2 mViewPager = findViewById(R.id.viewPager_main);
-        mViewPager.setAdapter(new SectionPageAdapter(this));
+        mAdapter = new SectionPageAdapter(this);
+        mViewPager.setAdapter(mAdapter);
 
-        new TabLayoutMediator(findViewById(R.id.tabLayout_main), mViewPager, (tab, position) -> {
-            ImageView imgView = new ImageView(this);
-
-            tab.setText(TAB_TITLES[position]);
-//            switch (position) {
-//                case 0:
-//                    imgView.setImageResource(R.drawable.tab_icon_contacts);
-//                    break;
-//                case 1:
-//                    imgView.setImageResource(R.drawable.tab_icon_images);
-//                    break;
-//                case 2:
-//                    imgView.setImageResource(R.drawable.tab_icon_diary);
-//            }
-//
-//            imgView.setPadding(10, 10, 10, 10);
-//            tab.setCustomView(imgView);
-        }).attach();
+        new TabLayoutMediator(findViewById(R.id.tabLayout_main), mViewPager,
+                (tab, position) -> tab.setText(TAB_TITLES[position])).attach();
 
         profileTracker = new ProfileTracker() {
             @Override
@@ -77,9 +91,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode == REQUEST_FACEBOOK_LOGIN) {
-            AccessToken accessToken = AccessToken.getCurrentAccessToken();
-
-            if (accessToken == null || accessToken.isExpired()){
+            if(resultCode != RESULT_OK) {
                 Toast.makeText(this, "Facebook 로그인이 정상적으로 되지 않았습니다", Toast.LENGTH_SHORT).show();
 
                 startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
