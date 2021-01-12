@@ -19,7 +19,18 @@ import com.example.madcamp1st.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class NewDiaryActivity extends AppCompatActivity {
+
+    private final String DB_URL = "http://192.249.18.163:1234/";
+    private DiaryService diaryService;
+
+    int weather = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,8 +40,13 @@ public class NewDiaryActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
 
-        Button dateButton = findViewById(R.id.date_button);
+        diaryService = new Retrofit.Builder()
+                .baseUrl(DB_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(DiaryService.class);
 
+        Button dateButton = findViewById(R.id.date_button);
         Button saveButton = findViewById(R.id.save_diary);
         RatingBar ratingBar = findViewById(R.id.daily_rating);
         EditText editText = findViewById(R.id.daily_comment);
@@ -79,7 +95,6 @@ public class NewDiaryActivity extends AppCompatActivity {
                     return;
                 }
 
-                int weather = -1;
                 switch (radioGroup.getCheckedRadioButtonId()) {
                     case R.id.sunny:
                         weather = 0;
@@ -97,13 +112,28 @@ public class NewDiaryActivity extends AppCompatActivity {
                         weather = 4;
                         break;
                 }
+                String calToStr = String.format("%s-%s-%s", calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH));
+                diaryService.getPage(calToStr).enqueue(new Callback<Page>() {
+                    @Override
+                    public void onResponse(Call<Page> call, Response<Page> response) {
+                        if (response.isSuccessful()) {
+                            Toast.makeText(getApplicationContext(), "선택한 날짜에 이미 작성한 일기가 있습니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Page page = new Page(calendar.getTime(), weather, ratingBar.getRating(), editText.getText().toString());
 
-                Page page = new Page(calendar.getTime(), weather, ratingBar.getRating(), editText.getText().toString());
+                            Intent i = new Intent();
+                            i.putExtra("page", page);
+                            setResult(RESULT_OK, i);
+                            finish();
+                        }
+                    }
 
-                Intent i = new Intent();
-                i.putExtra("page", page);
-                setResult(RESULT_OK, i);
-                finish();
+                    @Override
+                    public void onFailure(Call<Page> call, Throwable t) {
+                        Toast.makeText(getApplicationContext(), "서버에 연결할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
             }
         });
     }

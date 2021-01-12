@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Madcamp 1st</string>
+    <string name="tab_text_1">Contacts</string>
+    <string name="tab_text_2">Gallery</string>
+    <string name="tab_text_3">Diary</string>
 
     <string name="facebook_app_id">1254017368293811</string>
     <string name="fb_login_protocol_scheme">fb1254017368293811</string>
