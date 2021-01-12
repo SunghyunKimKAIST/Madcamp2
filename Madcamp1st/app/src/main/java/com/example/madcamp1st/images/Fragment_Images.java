@@ -74,7 +74,7 @@ public class Fragment_Images extends Fragment {
         RecyclerView recyclerView = mView.findViewById(R.id.recyclerView_images);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        mAdapter = new ImageAdapter(internalImageFilepaths);
+        mAdapter = new ImageAdapter(getActivity(), internalImageFilepaths);
         recyclerView.setAdapter(mAdapter);
 
         // DB 통신
@@ -255,7 +255,7 @@ public class Fragment_Images extends Fragment {
     }
 
     // copied from android document
-    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         // Raw height and width of image
         final int height = options.outHeight;
         final int width = options.outWidth;
@@ -274,7 +274,7 @@ public class Fragment_Images extends Fragment {
         return inSampleSize;
     }
 
-    private Bitmap decodeThumbnailFromFile(String pathName, int reqWidth, int reqHeight) {
+    public static Bitmap decodeThumbnailFromFile(String pathName, int reqWidth, int reqHeight) {
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
