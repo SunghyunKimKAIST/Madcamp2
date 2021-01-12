@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#FFFFFF"
     android:orientation="vertical"
-    tools:context=".Fragment_Diary">
+    tools:context=".diary.Fragment_Diary">
     <CalendarView
         android:id="@+id/diary_calendar"
         android:layout_width="wrap_content"
@@ -29,6 +29,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:isIndicator="true"
+        android:progressBackgroundTint="#BCBCB8"
+        android:progressTint="#F2D230"
+        android:secondaryProgressTint="#F2C335"
         />
 
     <TextView
@@ -46,7 +49,7 @@
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_diary"
-            android:layout_width="74dp"
+            android:layout_width="78dp"
             android:layout_height="78dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
