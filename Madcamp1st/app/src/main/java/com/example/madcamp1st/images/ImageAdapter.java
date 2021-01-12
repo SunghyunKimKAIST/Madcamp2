@@ -49,11 +49,6 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         File imageFilepath = imageFilepaths.get(position);
 
         holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFilepath.getPath()));
-        /*
-        Bitmap thumbnail = fragment_images.getContext().getContentResolver().loadThumbnail(uri, new Size(640, 480), null);
-        holder.imageButton.setImageBitmap(thumbnail);
-        holder.name.setText(name);
-        */
     }
 
     @Override

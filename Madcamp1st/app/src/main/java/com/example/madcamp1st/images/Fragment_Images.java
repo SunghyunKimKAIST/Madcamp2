@@ -1,6 +1,11 @@
 package com.example.madcamp1st.images;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +23,9 @@ import com.example.madcamp1st.R;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -45,6 +53,8 @@ public class Fragment_Images extends Fragment {
 
     private final String DB_URL = "http://192.249.18.163:1234/";
     private ImageService imageService;
+
+    private final int REQUEST_CODE_GET_IMAGE = 0;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
@@ -92,6 +102,63 @@ public class Fragment_Images extends Fragment {
                 Toast.makeText(getContext(), "getAllImageName: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
             }
         });
+
+        mView.findViewById(R.id.button_get_image).setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            startActivityForResult(Intent.createChooser(intent, "Get Album"), REQUEST_CODE_GET_IMAGE);
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == REQUEST_CODE_GET_IMAGE && resultCode == Activity.RESULT_OK){
+            Uri uri = data.getData();
+            File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
+            File file = new File(directory, getFileNameFromUri(uri));
+
+            try(InputStream is = getContext().getContentResolver().openInputStream(uri)){
+                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getContext(), "get image from internal gallery error: IOException", Toast.LENGTH_SHORT).show();
+
+                if(file.exists())
+                    file.delete();
+
+                return;
+            }
+
+            internalImageFilepaths.add(file);
+            internalImageFilepaths.sort((l, r) -> l.getName().compareTo(r.getName()));
+            mAdapter.updateImages(internalImageFilepaths);
+        }
+    }
+
+    // 이거 꼭 써야함? 모르겠음
+    // https://stackoverflow.com/questions/5568874/how-to-extract-the-file-name-from-uri-returned-from-intent-action-get-content
+    private String getFileNameFromUri(Uri uri) {
+        String result = null;
+
+        if (uri.getScheme().equals("content")) {
+            try (Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst())
+                    result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+            }
+        }
+
+        if (result == null) {
+            result = uri.getPath();
+
+            int cut = result.lastIndexOf('/');
+
+            if (cut != -1)
+                result = result.substring(cut + 1);
+        }
+
+        return result;
     }
 
     private List<File> loadInternalImageFilepaths(){
