@@ -133,7 +133,7 @@ public class Fragment_Images extends Fragment {
                 return;
             }
 
-            internalImageFilepaths.add(new Image(name, original, thumbnail));
+            internalImageFilepaths.add(new Image(name, mainActivity.fid, original, thumbnail));
             internalImageFilepaths.sort(null);
             mAdapter.updateImages(internalImageFilepaths);
         }else if(requestCode == REQUEST_FULL_IMAGE && resultCode == Activity.RESULT_OK){
@@ -215,7 +215,7 @@ public class Fragment_Images extends Fragment {
         List<Image> res = new ArrayList<>();
 
         for(int i = 0; i < originalFiles.length; i++)
-            res.add(new Image(originalFiles[i].getName(), originalFiles[i], thumbnailFiles[i]));
+            res.add(new Image(originalFiles[i].getName(), mainActivity.fid, originalFiles[i], thumbnailFiles[i]));
 
         res.sort(null);
 
@@ -224,7 +224,10 @@ public class Fragment_Images extends Fragment {
 
     // 동시성 문제 존재
     private void downloadImageFromDBAndStoreAsync(String imageFilepath){
-        imageService.downloadImage(imageFilepath).enqueue(new Callback<ResponseBody>() {
+        if(!mainActivity.isLoggedIn)
+            return;
+
+        imageService.downloadImage(mainActivity.fid, imageFilepath).enqueue(new Callback<ResponseBody>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -246,7 +249,7 @@ public class Fragment_Images extends Fragment {
                             decodeThumbnailFromFile(original.getPath(), 360, 360).compress(Bitmap.CompressFormat.PNG, 100, thumbnailOS);
                         }
 
-                        internalImageFilepaths.add(new Image(imageFilepath, original, thumbnail));
+                        internalImageFilepaths.add(new Image(imageFilepath, mainActivity.fid, original, thumbnail));
                         internalImageFilepaths.sort(null);
                         mAdapter.updateImages(internalImageFilepaths);
                     }catch (IOException e){
@@ -307,12 +310,15 @@ public class Fragment_Images extends Fragment {
     }
 
     private void uploadImageToDBAsync(File originalFile){
+        if(!mainActivity.isLoggedIn)
+            return;
+
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(originalFile.toURI().toString()));
         RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), originalFile);
 
         MultipartBody.Part body = MultipartBody.Part.createFormData("image", originalFile.getName(), requestFile);
 
-        RequestBody description = RequestBody.create(MultipartBody.FORM, "description");
+        RequestBody description = RequestBody.create(MultipartBody.FORM, mainActivity.fid);
 
         imageService.uploadImage(description, body).enqueue(new Callback<ResponseBody>() {
             @Override
@@ -379,7 +385,10 @@ public class Fragment_Images extends Fragment {
     }
 
     public void syncImages(){
-        imageService.getAllImageName().enqueue(new Callback<List<Image>>() {
+        if(!mainActivity.isLoggedIn)
+            return;
+
+        imageService.getAllImageName(mainActivity.fid).enqueue(new Callback<List<Image>>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<List<Image>> call, Response<List<Image>> response) {

@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CalendarView;
+import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,13 +42,15 @@ public class Fragment_Diary extends Fragment {
     private List<Page> internalPages;
     private Page selectedPage;
 
-    private int REQUEST_CREATE_PAGE = 0;
-    private int REQUEST_EDIT_PAGE = 1;
+    private final int REQUEST_CREATE_PAGE = 0;
+    private final int REQUEST_EDIT_PAGE = 1;
 
     CalendarView calendarView;
     TextView averageInfo;
     RatingBar ratingBar;
     TextView selectedComment;
+
+    public View reject;
 
     public Fragment_Diary() {
         // Required empty public constructor
@@ -73,6 +76,101 @@ public class Fragment_Diary extends Fragment {
                 .build()
                 .create(DiaryService.class);
 
+        /*
+        diaryService.getAllPages().enqueue(new Callback<List<Page>>() {
+            @Override
+            public void onResponse(Call<List<Page>> call, Response<List<Page>> response) {
+                mainActivity.setCurrentConnected(true);
+
+                if (response.isSuccessful()) {
+                    internalPages = response.body();
+                } else {
+                    Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Page>> call, Throwable t) {
+                mainActivity.setCurrentConnected(false);
+            }
+        });
+         */
+
+        calendarView = view.findViewById(R.id.diary_calendar);
+        ratingBar = view.findViewById(R.id.average_rating);
+        selectedComment = view.findViewById(R.id.content_view);
+
+        // Get average rating from server
+        averageInfo = view.findViewById(R.id.star_info);
+        averageInfo.setText(String.format("Average Rating = %.2f", 0.));
+        //updateAverageRating();
+
+        //Calendar calendar = Calendar.getInstance();
+        //calendar.setTimeInMillis(calendarView.getDate());
+        //updateAverageRating();
+        //updateCommentAndRating(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH));
+
+//        ratingBar.setRating(0);
+//        selectedComment.setText("");
+        /*
+        selectedComment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectedComment.getText().length() > 0) {
+                    Intent i = new Intent(getContext(), EditDiaryActivity.class);
+                    i.putExtra("page", selectedPage);
+                    startActivityForResult(i, REQUEST_EDIT_PAGE);
+                }
+            }
+        });
+         */
+
+        calendarView.setMaxDate(Calendar.getInstance().getTimeInMillis());
+        // Get a page of selected date from server
+        /*
+        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
+                // Get comment and rating from server
+                updateCommentAndRating(year, month+1, dayOfMonth);
+            }
+        });
+         */
+
+        //FloatingActionButton addButton = view.findViewById(R.id.add_diary);
+        /*
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getContext(), NewDiaryActivity.class);
+                startActivityForResult(i, REQUEST_CREATE_PAGE);
+            }
+        });
+         */
+
+        reject = view.findViewById(R.id.reject_images_diary);
+
+        if(mainActivity.isLoggedIn)
+            _onCreateView();
+
+        return view;
+    }
+
+    private void _onCreateView(){
+        reject.setVisibility(View.INVISIBLE);
+
+        //view = inflater.inflate(R.layout.fragment_diary, container, false);
+
+        //mainActivity = (MainActivity)getActivity();
+
+        /*
+        diaryService = new Retrofit.Builder()
+                .baseUrl(DB_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(DiaryService.class);
+         */
+
         diaryService.getAllPages().enqueue(new Callback<List<Page>>() {
             @Override
             public void onResponse(Call<List<Page>> call, Response<List<Page>> response) {
@@ -91,13 +189,15 @@ public class Fragment_Diary extends Fragment {
             }
         });
 
+        /*
         calendarView = view.findViewById(R.id.diary_calendar);
         ratingBar = view.findViewById(R.id.average_rating);
         selectedComment = view.findViewById(R.id.content_view);
+         */
 
         // Get average rating from server
-        averageInfo = view.findViewById(R.id.star_info);
-        averageInfo.setText(String.format("Average Rating = %.2f", 0.));
+        //averageInfo = view.findViewById(R.id.star_info);
+        //averageInfo.setText(String.format("Average Rating = %.2f", 0.));
         updateAverageRating();
 
         Calendar calendar = Calendar.getInstance();
@@ -118,7 +218,7 @@ public class Fragment_Diary extends Fragment {
             }
         });
 
-        calendarView.setMaxDate(Calendar.getInstance().getTimeInMillis());
+        //calendarView.setMaxDate(Calendar.getInstance().getTimeInMillis());
         // Get a page of selected date from server
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
@@ -136,8 +236,6 @@ public class Fragment_Diary extends Fragment {
                 startActivityForResult(i, REQUEST_CREATE_PAGE);
             }
         });
-
-        return view;
     }
 
     @Override

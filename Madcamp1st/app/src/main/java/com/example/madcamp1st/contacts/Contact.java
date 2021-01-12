@@ -11,12 +11,14 @@ public class Contact implements Comparable<Contact>{
     public String name;
     public String number;
     public String timestamp;
+    public String fid;
 
-    public Contact(String name, String number){
+    public Contact(String name, String number, String fid){
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.number = number;
         this.timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        this.fid = fid;
     }
 
     public UUID getUUID(){

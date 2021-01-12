@@ -16,19 +16,19 @@ import retrofit2.http.Part;
 import retrofit2.http.Path;
 
 public interface ImageService {
-    @GET("api/images")
-    Call<List<Image>> getAllImageName();
+    @GET("api/images/{fid}")
+    Call<List<Image>> getAllImageName(@Path("fid")String fid);
 
-    @GET("api/images/{filename}")
-    Call<ResponseBody> downloadImage(@Path("filename") String filename);
+    @GET("api/images/{fid}/{filename}")
+    Call<ResponseBody> downloadImage(@Path("fid")String fid, @Path("filename") String filename);
 
     @Multipart
     @POST("api/images")
     Call<ResponseBody> uploadImage(
-            @Part("description") RequestBody description,
+            @Part("fid") RequestBody description,
             @Part MultipartBody.Part file
     );
 
-    @DELETE("api/images/{filename}")
+    @DELETE("api/images/{fid}/{filename}")
     Call<MyResponse> deleteImage(@Path("filename") String filename);
 }

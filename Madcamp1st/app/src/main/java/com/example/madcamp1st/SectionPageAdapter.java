@@ -1,10 +1,6 @@
 package com.example.madcamp1st;
 
-import android.content.Context;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -16,6 +12,7 @@ import com.example.madcamp1st.images.Fragment_Images;
 public class SectionPageAdapter extends FragmentStateAdapter {
     public Fragment_Contacts fragment_contacts;
     public Fragment_Images fragment_images;
+    public Fragment_Diary fragment_diary;
 
     public SectionPageAdapter(FragmentActivity fa) {
         super(fa);
@@ -32,7 +29,8 @@ public class SectionPageAdapter extends FragmentStateAdapter {
                 fragment_images = new Fragment_Images();
                 return fragment_images;
             case 2:
-                return new Fragment_Diary();
+                fragment_diary = new Fragment_Diary();
+                return fragment_diary;
         }
 
         return new Fragment();

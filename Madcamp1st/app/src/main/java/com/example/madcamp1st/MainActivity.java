@@ -6,7 +6,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
     @StringRes private static final int[] TAB_TITLES = new int[] {R.string.tab_text_1, R.string.tab_text_2, R.string.tab_text_3};
     private final int REQUEST_FACEBOOK_LOGIN = 0;
 
+    public boolean isLoggedIn = false;
+    public String fid = "";
+
     private Button internetButton;
     private boolean isConnected = false;
 
@@ -35,21 +37,34 @@ public class MainActivity extends AppCompatActivity {
         if(this.isConnected != isConnected) {
             if(isConnected) {
                 internetButton.setText("Online");
-                //internetButton.setBackgroundColor(Color.GREEN);
+                if(mAdapter.fragment_diary != null && mAdapter.fragment_diary.reject != null)
+                    mAdapter.fragment_diary.reject.setVisibility(View.INVISIBLE);
             }
             else {
                 internetButton.setText("Offline");
-                //internetButton.setBackgroundColor(Color.GREEN);
+                if(mAdapter.fragment_diary != null && mAdapter.fragment_diary.reject != null)
+                    mAdapter.fragment_diary.reject.setVisibility(View.VISIBLE);
             }
         }
         this.isConnected = isConnected;
     }
 
-    public void reconnectToInternet(View view){
-        if(!isConnected){
+    private void reconnectToInternet() {
+        if(!isLoggedIn)
+            setCurrentConnected(false);
+
+        if(mAdapter.fragment_contacts != null)
             mAdapter.fragment_contacts.syncContacts();
+
+        if(mAdapter.fragment_images != null)
             mAdapter.fragment_images.syncImages();
-        }
+    }
+
+    public void reconnectToInternet(View view){
+        if(!isLoggedIn)
+            Toast.makeText(this, "로그인해주세요", Toast.LENGTH_SHORT).show();
+
+        reconnectToInternet();
     }
 
     @Override
@@ -71,18 +86,32 @@ public class MainActivity extends AppCompatActivity {
         profileTracker = new ProfileTracker() {
             @Override
             protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
-                if(currentProfile != null)
+                if(currentProfile != null) {
+                    fid = currentProfile.getId();
+                    isLoggedIn = true;
                     actionBar.setTitle(currentProfile.getName());
-                else
+                } else {
+                    isLoggedIn = false;
                     actionBar.setTitle(R.string.app_name);
+                }
+
+                reconnectToInternet();
             }
         };
 
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
 
-        if (accessToken != null && !accessToken.isExpired())
+        if (accessToken != null && !accessToken.isExpired()) {
+            Profile profile = Profile.getCurrentProfile();
+
+            if(profile != null){
+                fid = profile.getId();
+                isLoggedIn = true;
+                reconnectToInternet();
+            }
+
             actionBar.setTitle(Profile.getCurrentProfile().getName());
-        else
+        } else
             startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
     }
 

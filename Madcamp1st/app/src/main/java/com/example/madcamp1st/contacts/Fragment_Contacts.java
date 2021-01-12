@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -155,7 +154,7 @@ public class Fragment_Contacts extends Fragment {
 
             cursor.close();
 
-            Contact contact = new Contact(name, number);
+            Contact contact = new Contact(name, number, mainActivity.fid);
 
             internalContacts.add(contact);
             internalContacts.sort(null);
@@ -233,6 +232,9 @@ public class Fragment_Contacts extends Fragment {
     }
 
     private void createContactToDBAsync(Contact contact, SyncFlag syncFlag){
+        if(!mainActivity.isLoggedIn)
+            return;
+
         contactService.createContact(contact).enqueue(new Callback<MyResponse>() {
             @Override
             @EverythingIsNonNull
@@ -281,7 +283,10 @@ public class Fragment_Contacts extends Fragment {
     }
 
     private void updateContactToDBAsync(Contact contact, SyncFlag syncFlag){
-        contactService.updateContact(contact.getUUID(), contact).enqueue(new Callback<MyResponse>() {
+        if(!mainActivity.isLoggedIn)
+            return;
+
+        contactService.updateContact(mainActivity.fid, contact.getUUID(), contact).enqueue(new Callback<MyResponse>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
@@ -328,9 +333,12 @@ public class Fragment_Contacts extends Fragment {
     }
 
     public void deleteContactAsync(Contact contact){
+        if(!mainActivity.isLoggedIn)
+            return;
+
         int index = internalContacts.indexOf(contact);
 
-        contactService.deleteContact(internalContacts.get(index).getUUID()).enqueue(new Callback<MyResponse>() {
+        contactService.deleteContact(mainActivity.fid, internalContacts.get(index).getUUID()).enqueue(new Callback<MyResponse>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
@@ -365,9 +373,6 @@ public class Fragment_Contacts extends Fragment {
         SyncFlag syncFlag = new SyncFlag(0, now);
 
         dbContacts.sort(null);
-
-        Log.e("internalContacts", internalContacts.toString());
-        Log.e("dbContacts", dbContacts.toString());
 
         ListIterator<Contact> internalIterator = internalContacts.listIterator();
         Iterator<Contact> dbIterator = dbContacts.iterator();
@@ -434,7 +439,10 @@ public class Fragment_Contacts extends Fragment {
     }
 
     public void syncContacts(){
-        contactService.getAllNewerContacts(timestamp.format(DateTimeFormatter.ISO_INSTANT)).enqueue(new Callback<List<Contact>>() {
+        if(!mainActivity.isLoggedIn)
+            return;
+
+        contactService.getAllNewerContacts(mainActivity.fid, timestamp.format(DateTimeFormatter.ISO_INSTANT)).enqueue(new Callback<List<Contact>>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<List<Contact>> call, Response<List<Contact>> response) {

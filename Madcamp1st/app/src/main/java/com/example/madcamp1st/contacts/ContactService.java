@@ -14,18 +14,15 @@ import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 public interface ContactService {
-    @GET("api/persons")
-    Call<List<Contact>> getAllContacts();
-
-    @GET("api/persons/newer/{time}")
-    Call<List<Contact>> getAllNewerContacts(@Path("time") String timestamp);
+    @GET("api/persons/newer/{fid}/{time}")
+    Call<List<Contact>> getAllNewerContacts(@Path("fid")String fid, @Path("time") String timestamp);
 
     @POST("api/persons")
     Call<MyResponse> createContact(@Body Contact contact);
 
-    @PUT("api/persons/{uuid}")
-    Call<MyResponse> updateContact(@Path("uuid") UUID uuid, @Body Contact contact);
+    @PUT("api/persons/{fid}/{uuid}")
+    Call<MyResponse> updateContact(@Path("fid")String fid, @Path("uuid") UUID uuid, @Body Contact contact);
 
-    @DELETE("api/persons/{uuid}")
-    Call<MyResponse> deleteContact(@Path("uuid") UUID uuid);
+    @DELETE("api/persons/{fid}/{uuid}")
+    Call<MyResponse> deleteContact(@Path("fid")String fid, @Path("uuid") UUID uuid);
 }

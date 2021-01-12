@@ -12,8 +12,9 @@ public class Image implements Comparable<Image>{
     public transient File original;
     public transient File thumbnail;
 
-    public Image(String name, File original, File thumbnail){
+    public Image(String name, String fid, File original, File thumbnail){
         this.name = name;
+        this.fid = fid;
         this.original = original;
         this.thumbnail = thumbnail;
     }
