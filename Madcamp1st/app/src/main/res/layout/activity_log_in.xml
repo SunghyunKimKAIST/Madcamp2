@@ -14,4 +14,11 @@
         android:layout_marginTop="30dp"
         android:layout_marginBottom="30dp" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="100dp"
+        android:text="오프라인에서 계속하기"/>
+
 </FrameLayout>

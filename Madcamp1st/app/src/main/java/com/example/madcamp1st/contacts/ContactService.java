@@ -1,10 +1,13 @@
 package com.example.madcamp1st.contacts;
 
+import com.example.madcamp1st.MyResponse;
+
 import java.util.List;
 import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -18,8 +21,11 @@ public interface ContactService {
     Call<List<Contact>> getAllNewerContacts(@Path("time") String timestamp);
 
     @POST("api/persons")
-    Call<ContactResponse> createContact(@Body Contact contact);
+    Call<MyResponse> createContact(@Body Contact contact);
 
     @PUT("api/persons/{uuid}")
-    Call<ContactResponse> updateContact(@Path("uuid") UUID uuid, @Body Contact contact);
+    Call<MyResponse> updateContact(@Path("uuid") UUID uuid, @Body Contact contact);
+
+    @DELETE("api/persons/{uuid}")
+    Call<MyResponse> deleteContact(@Path("uuid") UUID uuid);
 }

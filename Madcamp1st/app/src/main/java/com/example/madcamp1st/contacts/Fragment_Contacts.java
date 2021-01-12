@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -19,11 +20,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SearchView;
 
+import com.example.madcamp1st.DeleteCallback;
+import com.example.madcamp1st.MyResponse;
 import com.example.madcamp1st.R;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,6 +51,8 @@ import retrofit2.internal.EverythingIsNonNull;
 public class Fragment_Contacts extends Fragment {
     private View mView;
     private ContactAdapter mAdapter;
+    private Button internetButton;
+    private boolean isConnected;
 
     private Gson gson;
 
@@ -82,30 +88,21 @@ public class Fragment_Contacts extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        isConnected = false;
+        internetButton = mView.findViewById(R.id.contact_internet_button);
+        internetButton.setText("Disconnected");
+
         gson = new Gson();
 
         // get cashed data
-        try {
-            timestamp = loadTimestamp();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "내부 저장소에서 timestamp를 불러오는데 실패했습니다", Toast.LENGTH_LONG).show();
-            timestamp = MIN_ZONED_DATE_TIME;
-        }
-
-        try{
-            internalContacts = loadInternalContacts();
-        }catch (IOException e){
-            e.printStackTrace();
-            Toast.makeText(getContext(), "내부 저장소에서 연락처를 불러오는데 실패했습니다", Toast.LENGTH_LONG).show();
-            internalContacts = new ArrayList<>();
-        }
+        timestamp = loadTimestamp();
+        internalContacts = loadContactsFromInternal();
 
         // recyclerview
         RecyclerView recyclerView = mView.findViewById(R.id.recyclerView_contacts);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        mAdapter = new ContactAdapter(internalContacts);
+        mAdapter = new ContactAdapter(this, internalContacts);
         recyclerView.setAdapter(mAdapter);
 
         // DB 통신
@@ -124,6 +121,9 @@ public class Fragment_Contacts extends Fragment {
 
                     internalContacts = syncContacts(internalContacts, dbContacts);
                     mAdapter.updateContacts(internalContacts);
+
+                    isConnected = true;
+                    internetButton.setText("Connected");
                 } else
                     Toast.makeText(getContext(), "getAllNewerContacts: DB에서 연락처를 불러오는데 실패했습니다\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
             }
@@ -139,13 +139,13 @@ public class Fragment_Contacts extends Fragment {
         ((SearchView)mView.findViewById(R.id.searchView_contacts)).setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                mAdapter.filter(query);
+                mAdapter.filter(query, true);
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                mAdapter.filter(newText);
+                mAdapter.filter(newText, true);
                 return true;
             }
         });
@@ -182,22 +182,31 @@ public class Fragment_Contacts extends Fragment {
             Contact contact = new Contact(name, number);
 
             internalContacts.add(contact);
-            internalContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
+            internalContacts.sort(null);
             mAdapter.updateContacts(internalContacts);
 
-            createContactDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
+            createContactToDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
         }
     }
 
-    private ZonedDateTime loadTimestamp() throws IOException {
+    private ZonedDateTime loadTimestamp() {
         File file = new File(getContext().getFilesDir(), contactsTimestampFileName);
 
-        if (!file.exists()) {
-            Log.e("0", contactsTimestampFileName + " does not exists");
+        if (!file.exists())
             return MIN_ZONED_DATE_TIME;
+        else {
+            byte[] bytes;
+
+            try{
+                bytes = Files.readAllBytes(file.toPath());
+            }catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getContext(), "내부 저장소에서 Timestamp를 불러오는데 실패했습니다", Toast.LENGTH_LONG).show();
+                return MIN_ZONED_DATE_TIME;
+            }
+
+            return ZonedDateTime.parse(new String(bytes));
         }
-        else
-            return ZonedDateTime.parse(new String(Files.readAllBytes(file.toPath())));
     }
 
     private void storeTimestamp(ZonedDateTime timestamp){
@@ -216,20 +225,22 @@ public class Fragment_Contacts extends Fragment {
         }
     }
 
-    private List<Contact> loadInternalContacts() throws IOException {
+    private List<Contact> loadContactsFromInternal(){
         File file = new File(getContext().getFilesDir(), contactsDataFileName);
 
-        if (!file.exists()) {
-            Log.e("0", contactsDataFileName + "does not exists");
+        if (!file.exists())
             return new ArrayList<>();
-        }
 
         try(InputStreamReader isr = new InputStreamReader(getContext().openFileInput(contactsDataFileName))) {
             return gson.fromJson(isr, new TypeToken<List<Contact>>(){}.getType());
+        }catch (IOException e){
+            e.printStackTrace();
+            Toast.makeText(getContext(), "내부 저장소에서 연락처를 가져오는데 실패했습니다", Toast.LENGTH_LONG).show();
+            return new ArrayList<>();
         }
     }
 
-    private void storeInternalContacts(List<Contact> internalContacts){
+    private void storeContactsToInternal(List<Contact> internalContacts){
         File file = new File(getContext().getFilesDir(), contactsDataFileName);
 
         try {
@@ -245,11 +256,11 @@ public class Fragment_Contacts extends Fragment {
         }
     }
 
-    private void createContactDBAsync(Contact contact, SyncFlag syncFlag){
-        contactService.createContact(contact).enqueue(new Callback<ContactResponse>() {
+    private void createContactToDBAsync(Contact contact, SyncFlag syncFlag){
+        contactService.createContact(contact).enqueue(new Callback<MyResponse>() {
             @Override
             @EverythingIsNonNull
-            public void onResponse(Call<ContactResponse> call, Response<ContactResponse> response) {
+            public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
                 if(response.isSuccessful()){
                     if(response.body().result != 1) {
                         Toast.makeText(getContext(), "createContactDBAsync: DB error", Toast.LENGTH_LONG).show();
@@ -268,13 +279,13 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
-                    storeInternalContacts(internalContacts);
+                    storeContactsToInternal(internalContacts);
                 }
             }
 
             @Override
             @EverythingIsNonNull
-            public void onFailure(Call<ContactResponse> call, Throwable t) {
+            public void onFailure(Call<MyResponse> call, Throwable t) {
                 Toast.makeText(getContext(), "createContactDBAsync: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
 
                 if(contact.getTimestamp().isBefore(syncFlag.update))
@@ -284,17 +295,17 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
-                    storeInternalContacts(internalContacts);
+                    storeContactsToInternal(internalContacts);
                 }
             }
         });
     }
 
-    private void updateContactDBAsync(Contact contact, SyncFlag syncFlag){
-        contactService.updateContact(contact.getUUID(), contact).enqueue(new Callback<ContactResponse>() {
+    private void updateContactToDBAsync(Contact contact, SyncFlag syncFlag){
+        contactService.updateContact(contact.getUUID(), contact).enqueue(new Callback<MyResponse>() {
             @Override
             @EverythingIsNonNull
-            public void onResponse(Call<ContactResponse> call, Response<ContactResponse> response) {
+            public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
                 if(response.isSuccessful()){
                     if(!"person updated".equals(response.body().message)) {
                         Toast.makeText(getContext(), "updateContactDBAsync: " + response.code() + "\n" + response.body().error, Toast.LENGTH_LONG).show();
@@ -313,13 +324,13 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
-                    storeInternalContacts(internalContacts);
+                    storeContactsToInternal(internalContacts);
                 }
             }
 
             @Override
             @EverythingIsNonNull
-            public void onFailure(Call<ContactResponse> call, Throwable t) {
+            public void onFailure(Call<MyResponse> call, Throwable t) {
                 Toast.makeText(getContext(), "updateContactDBAsync: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
 
                 if(contact.getTimestamp().isBefore(syncFlag.update))
@@ -329,10 +340,32 @@ public class Fragment_Contacts extends Fragment {
                 if(syncFlag.n == 0){
                     timestamp = syncFlag.update;
                     storeTimestamp(timestamp);
-                    storeInternalContacts(internalContacts);
+                    storeContactsToInternal(internalContacts);
                 }
             }
         });
+    }
+
+    public void deleteContactAsync(Contact contact){
+        int index = internalContacts.indexOf(contact);
+
+        contactService.deleteContact(internalContacts.get(index).getUUID()).enqueue(new Callback<MyResponse>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                if(!response.isSuccessful())
+                    Toast.makeText(getContext(), "delete contact: 연락처를 DB에서 삭제하는데 실패했습니다\nHTTP status code:" + response.code(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<MyResponse> call, Throwable t) {
+                Toast.makeText(getContext(), "delete contact: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        internalContacts.remove(index);
+        storeContactsToInternal(internalContacts);
     }
 
     private <T> T nextOrNull(Iterator<T> iterator){
@@ -348,7 +381,7 @@ public class Fragment_Contacts extends Fragment {
         ZonedDateTime now = ZonedDateTime.now();
         SyncFlag syncFlag = new SyncFlag(0, now);
 
-        dbContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
+        dbContacts.sort(null);
 
         Log.e("internalContacts", internalContacts.toString());
         Log.e("dbContacts", dbContacts.toString());
@@ -368,7 +401,7 @@ public class Fragment_Contacts extends Fragment {
                         flag = false;
                         syncFlag.n++;
 
-                        updateContactDBAsync(internalContact, syncFlag);
+                        updateContactToDBAsync(internalContact, syncFlag);
                     }
                 } else {
                     if(!dbContact.getTimestamp().isBefore(timestamp))
@@ -382,7 +415,7 @@ public class Fragment_Contacts extends Fragment {
                     flag = false;
                     syncFlag.n++;
 
-                    createContactDBAsync(internalContact, syncFlag);
+                    createContactToDBAsync(internalContact, syncFlag);
                 }
 
                 internalContact = nextOrNull(internalIterator);
@@ -398,7 +431,7 @@ public class Fragment_Contacts extends Fragment {
                 flag = false;
                 syncFlag.n++;
 
-                createContactDBAsync(internalContact, syncFlag);
+                createContactToDBAsync(internalContact, syncFlag);
             }
 
             internalContact = nextOrNull(internalIterator);
@@ -413,7 +446,7 @@ public class Fragment_Contacts extends Fragment {
         if(flag){
             timestamp = now;
             storeTimestamp(timestamp);
-            storeInternalContacts(internalContacts);
+            storeContactsToInternal(internalContacts);
         }
 
         return internalContacts;

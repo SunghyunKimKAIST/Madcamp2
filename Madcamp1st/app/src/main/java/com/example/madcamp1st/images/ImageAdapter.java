@@ -1,6 +1,5 @@
 package com.example.madcamp1st.images;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
@@ -16,7 +15,7 @@ import com.example.madcamp1st.R;
 import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
-    private final Activity activity;
+    private final Fragment_Images fragment_images;
     private List<Image> imageFilepaths;
 
     public static class ImageViewHolder extends RecyclerView.ViewHolder {
@@ -28,8 +27,8 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
     }
 
-    public ImageAdapter(Activity activity, List<Image> imageFilepaths) {
-        this.activity = activity;
+    public ImageAdapter(Fragment_Images fragment_images, List<Image> imageFilepaths) {
+        this.fragment_images = fragment_images;
         this.imageFilepaths = imageFilepaths;
     }
 
@@ -53,7 +52,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         Bitmap bitmap = Fragment_Images.decodeThumbnailFromFile(image.thumbnail.getPath(), 720, 1480);
         holder.imageButton.setImageBitmap(bitmap);
         holder.imageButton.setOnClickListener(v ->
-                activity.startActivity(new Intent(activity, FullImageActivity.class).putExtra("image path", image.thumbnail.getPath()))
+                fragment_images.startActivityForResult(new Intent(v.getContext(), FullImageActivity.class)
+                        .putExtra("path", image.original.getPath())
+                        .putExtra("name", image.name)
+                        .putExtra("position", position), Fragment_Images.REQUEST_FULL_IMAGE)
         );
     }
 

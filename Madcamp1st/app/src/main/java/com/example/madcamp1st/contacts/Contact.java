@@ -6,7 +6,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-public class Contact {
+public class Contact implements Comparable<Contact>{
     public String uuid;
     public String name;
     public String number;
@@ -34,5 +34,10 @@ public class Contact {
                 + "\", \"name\": \"" + name
                 + "\", \"number\": \"" + number
                 + "\", \"timestamp\": \"" + timestamp + "\"}";
+    }
+
+    @Override
+    public int compareTo(Contact other) {
+        return uuid.compareTo(other.uuid);
     }
 }

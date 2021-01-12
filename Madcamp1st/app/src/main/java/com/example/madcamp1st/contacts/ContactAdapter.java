@@ -1,12 +1,13 @@
 package com.example.madcamp1st.contacts;
 
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -18,10 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> {
+    private final Fragment_Contacts fragment_contacts;
+
     private List<Contact> contacts;
     private List<Contact> filtered;
+    private String query = "";
 
-    public static class ContactViewHolder extends RecyclerView.ViewHolder {
+    public class ContactViewHolder extends RecyclerView.ViewHolder {
         public ImageView android;
         public TextView name;
         public TextView phone;
@@ -33,20 +37,49 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             name = itemView.findViewById(R.id.name);
             phone = itemView.findViewById(R.id.phone);
             calling = itemView.findViewById(R.id.calling);
+
+            itemView.setOnLongClickListener(v -> {
+                int position = getAdapterPosition();
+
+                if(position == RecyclerView.NO_POSITION)
+                    return false;
+
+                PopupMenu popupMenu = new PopupMenu(v.getContext(), v);
+                new MenuInflater(v.getContext()).inflate(R.menu.delete_menu, popupMenu.getMenu());
+
+                popupMenu.setOnMenuItemClickListener(item -> {
+                    if(item.getItemId() == R.id.delete){
+                        Contact contact = filtered.get(position);
+
+                        filtered.remove(position);
+                        contacts.remove(contact);
+                        notifyDataSetChanged();
+
+                        fragment_contacts.deleteContactAsync(contact);
+
+                        return true;
+                    }else
+                        return false;
+                });
+
+                popupMenu.show();
+
+                return true;
+            });
         }
     }
 
-    public ContactAdapter(List<Contact> contacts) {
+    public ContactAdapter(Fragment_Contacts fragment_contacts, List<Contact> contacts) {
+        this.fragment_contacts = fragment_contacts;
         this.contacts = new ArrayList<>(contacts);
         this.contacts.sort((l, r) -> l.name.compareTo(r.name));
-        filtered = this.contacts;
+        filter("", false);
     }
 
     public void updateContacts(List<Contact> contacts) {
         this.contacts = new ArrayList<>(contacts);
         this.contacts.sort((l, r) -> l.name.compareTo(r.name));
-        filtered = this.contacts;
-        notifyDataSetChanged();
+        filter(query, true);
     }
 
     @NonNull
@@ -65,17 +98,9 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         holder.name.setText(contact.name);
         holder.phone.setText(contact.number);
 
-        holder.calling.setOnClickListener(v -> {
-            Context c = v.getContext();
-            Intent intent = new Intent(Intent.ACTION_DIAL);
-            intent.setData(Uri.parse("tel:" + contact.number));
-
-            try {
-                c.startActivity(intent);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        holder.calling.setOnClickListener(v ->
+            v.getContext().startActivity(new Intent(Intent.ACTION_DIAL).setData(Uri.parse("tel:" + contact.number)))
+        );
     }
 
     @Override
@@ -83,9 +108,11 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         return filtered.size();
     }
 
-    public void filter(String text) {
+    public void filter(String text, boolean doNotifyDataSetChanged) {
+        query = text;
+
         if(text.isEmpty())
-            filtered = contacts;
+            filtered = new ArrayList<>(contacts);
         else {
             filtered = new ArrayList<>();
             text = text.toLowerCase();
@@ -96,6 +123,8 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                 }
             }
         }
-        notifyDataSetChanged();
+
+        if(doNotifyDataSetChanged)
+            notifyDataSetChanged();
     }
 }

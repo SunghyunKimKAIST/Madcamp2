@@ -1,6 +1,6 @@
-package com.example.madcamp1st.contacts;
+package com.example.madcamp1st;
 
-public class ContactResponse {
+public class MyResponse {
     public int result;
     public String message;
     public String error;

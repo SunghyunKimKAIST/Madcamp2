@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madcamp1st.MyResponse;
 import com.example.madcamp1st.R;
 
 import java.io.File;
@@ -57,6 +58,7 @@ public class Fragment_Images extends Fragment {
     private ImageService imageService;
 
     private final int REQUEST_GET_IMAGE = 0;
+    public static final int REQUEST_FULL_IMAGE = 1;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
@@ -74,7 +76,7 @@ public class Fragment_Images extends Fragment {
         RecyclerView recyclerView = mView.findViewById(R.id.recyclerView_images);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        mAdapter = new ImageAdapter(getActivity(), internalImageFilepaths);
+        mAdapter = new ImageAdapter(this, internalImageFilepaths);
         recyclerView.setAdapter(mAdapter);
 
         // DB 통신
@@ -144,8 +146,32 @@ public class Fragment_Images extends Fragment {
             }
 
             internalImageFilepaths.add(new Image(name, original, thumbnail));
-            internalImageFilepaths.sort((l, r) -> l.name.compareTo(r.name));
+            internalImageFilepaths.sort(null);
             mAdapter.updateImages(internalImageFilepaths);
+        }else if(requestCode == REQUEST_FULL_IMAGE && resultCode == Activity.RESULT_OK){
+            int position = data.getIntExtra("deleted", -1);
+            if(position >= 0){
+                Image image = internalImageFilepaths.get(position);
+                image.original.delete();
+                image.thumbnail.delete();
+                internalImageFilepaths.remove(position);
+                mAdapter.notifyDataSetChanged();
+
+                imageService.deleteImage(image.name).enqueue(new Callback<MyResponse>() {
+                    @Override
+                    @EverythingIsNonNull
+                    public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
+                        if(!response.isSuccessful())
+                            Toast.makeText(getContext(), "delete image: 이미지를 DB에서 삭제하는데 실패했습니다\nHTTP status code:" + response.code(), Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    @EverythingIsNonNull
+                    public void onFailure(Call<MyResponse> call, Throwable t) {
+                        Toast.makeText(getContext(), "delete image: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
         }
     }
 
@@ -201,14 +227,14 @@ public class Fragment_Images extends Fragment {
         for(int i = 0; i < originalFiles.length; i++)
             res.add(new Image(originalFiles[i].getName(), originalFiles[i], thumbnailFiles[i]));
 
-        res.sort((l, r) -> l.name.compareTo(r.name));
+        res.sort(null);
 
         return res;
     }
 
     // 동시성 문제 존재
-    private void getDBImageAndStoreAsync(String imageFilepath){
-        imageService.getImage(imageFilepath).enqueue(new Callback<ResponseBody>() {
+    private void downloadImageFromDBAndStoreAsync(String imageFilepath){
+        imageService.downloadImage(imageFilepath).enqueue(new Callback<ResponseBody>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -229,7 +255,7 @@ public class Fragment_Images extends Fragment {
                         }
 
                         internalImageFilepaths.add(new Image(imageFilepath, original, thumbnail));
-                        internalImageFilepaths.sort((l, r) -> l.name.compareTo(r.name));
+                        internalImageFilepaths.sort(null);
                         mAdapter.updateImages(internalImageFilepaths);
                     }catch (IOException e){
                         e.printStackTrace();
@@ -288,7 +314,7 @@ public class Fragment_Images extends Fragment {
         return BitmapFactory.decodeFile(pathName, options);
     }
 
-    private void dbCreateImage(File originalFile){
+    private void uploadImageToDBAsync(File originalFile){
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(originalFile.toURI().toString()));
         RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), originalFile);
 
@@ -296,7 +322,7 @@ public class Fragment_Images extends Fragment {
 
         RequestBody description = RequestBody.create(MultipartBody.FORM, "description");
 
-        imageService.createImage(description, body).enqueue(new Callback<ResponseBody>() {
+        imageService.uploadImage(description, body).enqueue(new Callback<ResponseBody>() {
             @Override
             @EverythingIsNonNull
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -320,7 +346,7 @@ public class Fragment_Images extends Fragment {
     }
 
     private void syncImages(List<Image> internalImages, List<Image> dbImages){
-        dbImages.sort((l, r) -> l.name.compareTo(r.name));
+        dbImages.sort(null);
 
         Iterator<Image> internalIterator = internalImages.listIterator();
         Iterator<Image> dbIterator = dbImages.iterator();
@@ -335,24 +361,24 @@ public class Fragment_Images extends Fragment {
                 internalImage = nextOrNull(internalIterator);
                 dbImage = nextOrNull(dbIterator);
             } else if(compare < 0) {
-                dbCreateImage(internalImage.original);
+                uploadImageToDBAsync(internalImage.original);
 
                 internalImage = nextOrNull(internalIterator);
             } else{
-                getDBImageAndStoreAsync(dbImage.name);
+                downloadImageFromDBAndStoreAsync(dbImage.name);
 
                 dbImage = nextOrNull(dbIterator);
             }
         }
 
         while(internalImage != null){
-            dbCreateImage(internalImage.original);
+            uploadImageToDBAsync(internalImage.original);
 
             internalImage = nextOrNull(internalIterator);
         }
 
         while(dbImage != null){
-            getDBImageAndStoreAsync(dbImage.name);
+            downloadImageFromDBAndStoreAsync(dbImage.name);
 
             dbImage = nextOrNull(dbIterator);
         }

@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.File;
 
-public class Image {
+public class Image implements Comparable<Image>{
     @SerializedName("filename")
     public String name;
 
@@ -15,5 +15,10 @@ public class Image {
         this.name = name;
         this.original = original;
         this.thumbnail = thumbnail;
+    }
+
+    @Override
+    public int compareTo(Image other) {
+        return name.compareTo(other.name);
     }
 }
