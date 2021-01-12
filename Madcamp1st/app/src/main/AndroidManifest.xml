@@ -49,10 +49,6 @@
         </activity>
 
         <activity
-            android:name=".contacts.CreateContactActivity"
-            android:parentActivityName=".MainActivity" />
-
-        <activity
             android:name=".diary.NewDiaryActivity"
             android:parentActivityName=".MainActivity" />
 

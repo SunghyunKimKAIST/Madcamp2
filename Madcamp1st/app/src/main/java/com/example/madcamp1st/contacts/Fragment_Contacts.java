@@ -3,7 +3,9 @@ package com.example.madcamp1st.contacts;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,7 +60,7 @@ public class Fragment_Contacts extends Fragment {
     private final String DB_URL = "http://192.249.18.163:1234/";
     private ContactService contactService;
 
-    private final int REQUEST_CODE_CREATE_CONTACT_ACTIVITY = 0;
+    private final int REQUEST_PICK_CONTACT = 0;
 
     private static class SyncFlag {
         public int n;
@@ -148,29 +150,42 @@ public class Fragment_Contacts extends Fragment {
             }
         });
 
-        mView.findViewById(R.id.button_create_contact).setOnClickListener(v ->
-            startActivityForResult(new Intent(getContext(), CreateContactActivity.class), REQUEST_CODE_CREATE_CONTACT_ACTIVITY)
-        );
+        mView.findViewById(R.id.button_create_contact).setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
+            startActivityForResult(intent, REQUEST_PICK_CONTACT);
+        });
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CODE_CREATE_CONTACT_ACTIVITY && resultCode == Activity.RESULT_OK){
-                String name = data.getStringExtra("name");
-                String number = data.getStringExtra("number");
+        if(requestCode == REQUEST_PICK_CONTACT && resultCode == Activity.RESULT_OK) {
+            Cursor cursor = getContext().getContentResolver().query(
+                    data.getData(),
+                    new String[]{
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER},
+                    null, null, null);
 
-                if(name != null && number != null){
-                    Contact contact = new Contact(name, number);
+            if(cursor == null || !cursor.moveToFirst()){
+                Toast.makeText(getContext(), "pick contact error", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    internalContacts.add(contact);
-                    internalContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
-                    mAdapter.updateContacts(internalContacts);
+            String name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+            String number = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
-                    createContactDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
-                } else
-                    Toast.makeText(getContext(), "create contact: intent error", Toast.LENGTH_SHORT).show();
+            cursor.close();
+
+            Contact contact = new Contact(name, number);
+
+            internalContacts.add(contact);
+            internalContacts.sort((l, r) -> l.uuid.compareTo(r.uuid));
+            mAdapter.updateContacts(internalContacts);
+
+            createContactDBAsync(contact, new SyncFlag(1, contact.getTimestamp()));
         }
     }
 
