@@ -54,7 +54,7 @@ public class Fragment_Images extends Fragment {
     private final String DB_URL = "http://192.249.18.163:1234/";
     private ImageService imageService;
 
-    private final int REQUEST_CODE_GET_IMAGE = 0;
+    private final int REQUEST_GET_IMAGE = 0;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
@@ -106,7 +106,7 @@ public class Fragment_Images extends Fragment {
         mView.findViewById(R.id.button_get_image).setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
-            startActivityForResult(Intent.createChooser(intent, "Get Album"), REQUEST_CODE_GET_IMAGE);
+            startActivityForResult(Intent.createChooser(intent, "Get Album"), REQUEST_GET_IMAGE);
         });
     }
 
@@ -114,7 +114,7 @@ public class Fragment_Images extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CODE_GET_IMAGE && resultCode == Activity.RESULT_OK){
+        if(requestCode == REQUEST_GET_IMAGE && resultCode == Activity.RESULT_OK){
             Uri uri = data.getData();
             File directory = new File(getContext().getFilesDir(), imagesDirectoryName);
             File file = new File(directory, getFileNameFromUri(uri));

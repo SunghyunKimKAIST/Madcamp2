@@ -16,7 +16,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 public class MainActivity extends AppCompatActivity {
     private ActionBar actionBar;
 
-    private final int REQUEST_CODE_FB_LOGIN = 0;
+    private final int REQUEST_FACEBOOK_LOGIN = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,14 +51,14 @@ public class MainActivity extends AppCompatActivity {
         if (accessToken != null && !accessToken.isExpired())
             actionBar.setTitle(Profile.getCurrentProfile().getName());
         else
-            startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_CODE_FB_LOGIN);
+            startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CODE_FB_LOGIN) {
+        if(requestCode == REQUEST_FACEBOOK_LOGIN) {
             AccessToken accessToken = AccessToken.getCurrentAccessToken();
 
             if (accessToken != null && !accessToken.isExpired())
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             else{
                 Toast.makeText(this, "Facebook 로그인이 정상적으로 되지 않았습니다", Toast.LENGTH_SHORT).show();
 
-                startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_CODE_FB_LOGIN);
+                startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
             }
         }
     }
