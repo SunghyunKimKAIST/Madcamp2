@@ -6,15 +6,20 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.Profile;
+import com.facebook.ProfileTracker;
+import com.facebook.login.LoginManager;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MainActivity extends AppCompatActivity {
     private ActionBar actionBar;
+    private ProfileTracker profileTracker;
 
     private final int REQUEST_FACEBOOK_LOGIN = 0;
 
@@ -46,6 +51,16 @@ public class MainActivity extends AppCompatActivity {
             tab.setCustomView(imgView);
         }).attach();
 
+        profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                if(currentProfile != null)
+                    actionBar.setTitle(currentProfile.getName());
+                else
+                    actionBar.setTitle(R.string.app_name);
+            }
+        };
+
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
 
         if (accessToken != null && !accessToken.isExpired())
@@ -61,13 +76,34 @@ public class MainActivity extends AppCompatActivity {
         if(requestCode == REQUEST_FACEBOOK_LOGIN) {
             AccessToken accessToken = AccessToken.getCurrentAccessToken();
 
-            if (accessToken != null && !accessToken.isExpired())
-                actionBar.setTitle(Profile.getCurrentProfile().getName());
-            else{
+            if (accessToken == null || accessToken.isExpired()){
                 Toast.makeText(this, "Facebook 로그인이 정상적으로 되지 않았습니다", Toast.LENGTH_SHORT).show();
 
                 startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
             }
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu) ;
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_logout) {
+            LoginManager.getInstance().logOut();
+            startActivityForResult(new Intent(this, LogInActivity.class), REQUEST_FACEBOOK_LOGIN);
+            return true;
+        } else
+            return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        profileTracker.startTracking();
     }
 }
