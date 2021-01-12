@@ -18,7 +18,7 @@
         android:id="@+id/star_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="25dp"
+        android:textSize="20dp"
         android:gravity="center"
         android:text="Average Rating"
         />
@@ -32,6 +32,7 @@
         android:progressBackgroundTint="#BCBCB8"
         android:progressTint="#F2D230"
         android:secondaryProgressTint="#F2C335"
+        android:visibility="invisible"
         />
 
     <TextView

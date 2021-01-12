@@ -49,7 +49,7 @@ public class EditDiaryActivity extends AppCompatActivity {
         editText = findViewById(R.id.daily_comment);
         saveButton = findViewById(R.id.save_diary);
 
-//            actionBar.setTitle("My diary");
+        actionBar.setTitle("My diary");
         Intent i = getIntent();
         page = (Page) i.getSerializableExtra("page");
 
@@ -62,7 +62,7 @@ public class EditDiaryActivity extends AppCompatActivity {
         dateButton.setClickable(false);
         for (int n = 0; n < radioGroup.getChildCount(); n++) {
             radioGroup.getChildAt(n).setClickable(false);
-//                radioGroup.getChildAt(n).setEnabled(false);
+//            radioGroup.getChildAt(n).setEnabled(false);
         }
         ratingBar.setIsIndicator(true);
         editText.setEnabled(false);
@@ -82,6 +82,12 @@ public class EditDiaryActivity extends AppCompatActivity {
             case R.id.menu_edit:
                 System.out.println("=====edit button pressed=====");
                 activateComponents();
+                break;
+            case R.id.menu_delete:
+                Intent i = new Intent();
+                i.putExtra("page", page);
+                setResult(RESULT_CANCELED, i);
+                finish();
                 break;
         }
         return true;

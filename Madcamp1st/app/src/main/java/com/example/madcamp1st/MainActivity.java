@@ -1,5 +1,6 @@
 package com.example.madcamp1st;
 
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -21,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private ActionBar actionBar;
     private ProfileTracker profileTracker;
 
+    @StringRes private static final int[] TAB_TITLES = new int[] {R.string.tab_text_1, R.string.tab_text_2, R.string.tab_text_3};
     private final int REQUEST_FACEBOOK_LOGIN = 0;
 
     @Override
@@ -36,19 +38,20 @@ public class MainActivity extends AppCompatActivity {
         new TabLayoutMediator(findViewById(R.id.tabLayout_main), mViewPager, (tab, position) -> {
             ImageView imgView = new ImageView(this);
 
-            switch (position) {
-                case 0:
-                    imgView.setImageResource(R.drawable.tab_icon_contacts);
-                    break;
-                case 1:
-                    imgView.setImageResource(R.drawable.tab_icon_images);
-                    break;
-                case 2:
-                    imgView.setImageResource(R.drawable.tab_icon_diary);
-            }
-
-            imgView.setPadding(10, 10, 10, 10);
-            tab.setCustomView(imgView);
+            tab.setText(TAB_TITLES[position]);
+//            switch (position) {
+//                case 0:
+//                    imgView.setImageResource(R.drawable.tab_icon_contacts);
+//                    break;
+//                case 1:
+//                    imgView.setImageResource(R.drawable.tab_icon_images);
+//                    break;
+//                case 2:
+//                    imgView.setImageResource(R.drawable.tab_icon_diary);
+//            }
+//
+//            imgView.setPadding(10, 10, 10, 10);
+//            tab.setCustomView(imgView);
         }).attach();
 
         profileTracker = new ProfileTracker() {

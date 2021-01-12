@@ -18,6 +18,8 @@ import com.example.madcamp1st.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -38,6 +40,11 @@ public class Fragment_Diary extends Fragment {
 
     private int REQUEST_CREATE_PAGE = 0;
     private int REQUEST_EDIT_PAGE = 1;
+
+    CalendarView calendarView;
+    TextView averageInfo;
+    RatingBar ratingBar;
+    TextView selectedComment;
 
     public Fragment_Diary() {
         // Required empty public constructor
@@ -67,47 +74,32 @@ public class Fragment_Diary extends Fragment {
                 if (response.isSuccessful()) {
                     internalPages = response.body();
                 } else {
-                    Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<List<Page>> call, Throwable t) {
-                Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "getAllPages: DB에서 일기를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
             }
         });
 
-        CalendarView calendarView = view.findViewById(R.id.diary_calendar);
-        RatingBar ratingBar = view.findViewById(R.id.average_rating);
+        calendarView = view.findViewById(R.id.diary_calendar);
+        ratingBar = view.findViewById(R.id.average_rating);
+        selectedComment = view.findViewById(R.id.content_view);
 
-        // TODO: Get average rating from server
-        TextView averageInfo = view.findViewById(R.id.star_info);
+        // Get average rating from server
+        averageInfo = view.findViewById(R.id.star_info);
         averageInfo.setText(String.format("Average Rating = %.2f", 0.));
-        diaryService.getAverageRating().enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    try {
-                        String res = response.body().string();
-                        averageInfo.setText(String.format("Average Rating = %.2f", Float.valueOf(res)));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    ratingBar.setRating(0);
-                    Toast.makeText(getContext(), "getAverage: DB에서 값을 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
-                }
-            }
+        updateAverageRating();
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(getContext(), "getAverage: DB에서 값을 불러오는데 실패했습니다.", Toast.LENGTH_LONG).show();
-            }
-        });
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(calendarView.getDate());
+        updateAverageRating();
+        updateCommentAndRating(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH));
 
-        ratingBar.setRating(0);
-        TextView selectedComment = view.findViewById(R.id.content_view);
-        selectedComment.setText("");
+//        ratingBar.setRating(0);
+//        selectedComment.setText("");
         selectedComment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -119,29 +111,13 @@ public class Fragment_Diary extends Fragment {
             }
         });
 
+        calendarView.setMaxDate(Calendar.getInstance().getTimeInMillis());
+        // Get a page of selected date from server
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
             public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
-                // TODO: Get comment and rating from server
-                diaryService.getPage(String.format("%s-%s-%s", year, month+1, dayOfMonth)).enqueue(new Callback<Page>() {
-                    @Override
-                    public void onResponse(Call<Page> call, Response<Page> response) {
-                        if (response.isSuccessful()) {
-                            selectedPage = response.body();
-                            ratingBar.setRating(selectedPage.getRating());
-                            selectedComment.setText(selectedPage.getComment());
-                        } else {
-                            ratingBar.setRating(0);
-                            selectedComment.setText("");
-                            Toast.makeText(getContext(), "getPage: DB에서 페이지를 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_LONG).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Page> call, Throwable t) {
-                        Toast.makeText(getContext(), "getPage: DB에서 페이지를 불러오는데 실패했습니다.", Toast.LENGTH_LONG).show();
-                    }
-                });
+                // Get comment and rating from server
+                updateCommentAndRating(year, month+1, dayOfMonth);
             }
         });
 
@@ -161,37 +137,105 @@ public class Fragment_Diary extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CREATE_PAGE && resultCode == Activity.RESULT_OK) {
-            Page newPage = (Page) data.getSerializableExtra("page");
-            diaryService.createPage(newPage).enqueue(new Callback<ResponseBody>() {
+        Page page = (Page) data.getSerializableExtra("page");
+        if (requestCode == REQUEST_CREATE_PAGE && resultCode == Activity.RESULT_OK) {
+            diaryService.createPage(page).enqueue(new Callback<ResponseBody>() {
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                     if (!response.isSuccessful()) {
-                        Toast.makeText(getContext(), "createPage: 새로운 페이지를 추가하는데 실패했습니다.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getContext(), "createPage: 새로운 페이지를 추가하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Toast.makeText(getContext(), "createPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "createPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
                 }
             });
-        } else if(requestCode == REQUEST_EDIT_PAGE && resultCode == Activity.RESULT_OK) {
-            System.out.println("=== onResult ===");
-            Page newPage = (Page) data.getSerializableExtra("page");
-            diaryService.updatePage(newPage.date, newPage).enqueue(new Callback<ResponseBody>() {
-                @Override
-                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                    if (!response.isSuccessful()) {
-                        Toast.makeText(getContext(), "createPage: 페이지를 수정하는데 실패했습니다.", Toast.LENGTH_LONG).show();
+        } else if (requestCode == REQUEST_EDIT_PAGE) {
+            if (resultCode == Activity.RESULT_OK) {
+                System.out.println("=== onResult ===");
+//                Page page = (Page) data.getSerializableExtra("page");
+                diaryService.updatePage(page.date, page).enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        if (!response.isSuccessful()) {
+                            Toast.makeText(getContext(), "editPage: 페이지를 수정하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
 
-                @Override
-                public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Toast.makeText(getContext(), "createPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_LONG).show();
-                }
-            });
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Toast.makeText(getContext(), "editPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+//                Page page = (Page) data.getSerializableExtra("page");
+                diaryService.deletePage(page.date).enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        if (!response.isSuccessful()) {
+                            Toast.makeText(getContext(), "deletePage: 페이지를 삭제하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Toast.makeText(getContext(), "deletePage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(calendarView.getDate());
+        updateAverageRating();
+//        updateCommentAndRating(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH));
+    }
+
+    private void updateAverageRating() {
+        diaryService.getAverageRating().enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    try {
+                        String res = response.body().string();
+                        averageInfo.setText(String.format("Average Rating = %.2f", Float.valueOf(res)));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    ratingBar.setRating(0);
+                    Toast.makeText(getContext(), "getAverage: DB에서 값을 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(getContext(), "getAverage: DB에서 값을 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateCommentAndRating(int year, int month, int dayOfMonth) {
+        diaryService.getPage(String.format("%s-%s-%s", year, month, dayOfMonth)).enqueue(new Callback<Page>() {
+            @Override
+            public void onResponse(Call<Page> call, Response<Page> response) {
+                if (response.isSuccessful()) {
+                    selectedPage = response.body();
+                    ratingBar.setVisibility(RatingBar.VISIBLE);
+                    ratingBar.setRating(selectedPage.getRating());
+                    selectedComment.setText(selectedPage.getComment());
+                } else {
+                    ratingBar.setVisibility(RatingBar.INVISIBLE);
+                    ratingBar.setRating(0);
+                    selectedComment.setText("");
+    //                Toast.makeText(getContext(), "getPage: DB에서 페이지를 불러오는데 실패했습니다.\nHTTP status code: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Page> call, Throwable t) {
+                Toast.makeText(getContext(), "getPage: DB에서 페이지를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
