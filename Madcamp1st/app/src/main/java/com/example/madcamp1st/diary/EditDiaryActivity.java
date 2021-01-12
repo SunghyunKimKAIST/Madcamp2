@@ -86,7 +86,8 @@ public class EditDiaryActivity extends AppCompatActivity {
             case R.id.menu_delete:
                 Intent i = new Intent();
                 i.putExtra("page", page);
-                setResult(RESULT_CANCELED, i);
+                i.putExtra("action", 1);
+                setResult(RESULT_OK, i);
                 finish();
                 break;
         }
@@ -122,6 +123,7 @@ public class EditDiaryActivity extends AppCompatActivity {
 
                 Intent i = new Intent();
                 i.putExtra("page", page);
+                i.putExtra("action", 0);
                 setResult(RESULT_OK, i);
                 finish();
             }

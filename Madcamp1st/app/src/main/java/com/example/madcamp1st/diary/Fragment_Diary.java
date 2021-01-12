@@ -137,8 +137,10 @@ public class Fragment_Diary extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        Page page = (Page) data.getSerializableExtra("page");
+        Page page;
+        int action;
         if (requestCode == REQUEST_CREATE_PAGE && resultCode == Activity.RESULT_OK) {
+            page = (Page) data.getSerializableExtra("page");
             diaryService.createPage(page).enqueue(new Callback<ResponseBody>() {
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -152,10 +154,10 @@ public class Fragment_Diary extends Fragment {
                     Toast.makeText(getContext(), "createPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
                 }
             });
-        } else if (requestCode == REQUEST_EDIT_PAGE) {
-            if (resultCode == Activity.RESULT_OK) {
-                System.out.println("=== onResult ===");
-//                Page page = (Page) data.getSerializableExtra("page");
+        } else if (requestCode == REQUEST_EDIT_PAGE && resultCode == Activity.RESULT_OK) {
+            page = (Page) data.getSerializableExtra("page");
+            action = data.getIntExtra("action", -1);
+            if (action == 0) {
                 diaryService.updatePage(page.date, page).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -169,8 +171,7 @@ public class Fragment_Diary extends Fragment {
                         Toast.makeText(getContext(), "editPage: DB와 연결하는데 실패했습니다", Toast.LENGTH_SHORT).show();
                     }
                 });
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-//                Page page = (Page) data.getSerializableExtra("page");
+            } else if (action == 1) {
                 diaryService.deletePage(page.date).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
