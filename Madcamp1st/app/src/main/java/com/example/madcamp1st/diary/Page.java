@@ -9,13 +9,14 @@ public class Page implements Serializable {
     public int weather;
     public float rating;
     public String comment;
+    public String fid;
 
-    public Page(Date date, int weather, float rating, String comment) {
+    public Page(Date date, int weather, float rating, String comment, String fid) {
         this.date = date;
         this.weather = weather;
         this.rating = rating;
         this.comment = comment;
-
+        this.fid = fid;
     }
 
     public Date getDate() {
