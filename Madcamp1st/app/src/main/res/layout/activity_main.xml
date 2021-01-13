@@ -17,7 +17,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Offline"
-        android:onClick="reconnectToInternet"/>
+        android:onClick="reconnectToInternet"
+        android:textColor="#ff0000"/>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager_main"

@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,16 +38,23 @@ public class MainActivity extends AppCompatActivity {
         if(this.isConnected != isConnected) {
             if(isConnected) {
                 internetButton.setText("Online");
-                if(mAdapter.fragment_diary != null && mAdapter.fragment_diary.reject != null)
+                internetButton.setTextColor(Color.GREEN);
+                if(mAdapter.fragment_diary != null && mAdapter.fragment_diary.reject != null) {
                     mAdapter.fragment_diary.reject.setVisibility(View.INVISIBLE);
+                    if(!mAdapter.fragment_diary.hasInit)
+                        mAdapter.fragment_diary._onCreateView();
+                }
             }
             else {
                 internetButton.setText("Offline");
+                internetButton.setTextColor(Color.RED);
                 if(mAdapter.fragment_diary != null && mAdapter.fragment_diary.reject != null)
                     mAdapter.fragment_diary.reject.setVisibility(View.VISIBLE);
             }
+
+            this.isConnected = isConnected;
+            mAdapter.notifyDataSetChanged();
         }
-        this.isConnected = isConnected;
     }
 
     private void reconnectToInternet() {

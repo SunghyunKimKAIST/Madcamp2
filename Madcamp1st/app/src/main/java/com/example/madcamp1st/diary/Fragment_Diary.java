@@ -51,6 +51,7 @@ public class Fragment_Diary extends Fragment {
     TextView selectedComment;
 
     public View reject;
+    public boolean hasInit = false;
 
     public Fragment_Diary() {
         // Required empty public constructor
@@ -156,8 +157,9 @@ public class Fragment_Diary extends Fragment {
         return view;
     }
 
-    private void _onCreateView(){
+    public void _onCreateView(){
         reject.setVisibility(View.INVISIBLE);
+        hasInit = true;
 
         //view = inflater.inflate(R.layout.fragment_diary, container, false);
 
@@ -242,12 +244,14 @@ public class Fragment_Diary extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        switch (data.getIntExtra("connected", -1)){
-            case 1:
-                mainActivity.setCurrentConnected(true);
-                break;
-            case 0:
-                mainActivity.setCurrentConnected(false);
+        if(data != null) {
+            switch (data.getIntExtra("connected", -1)) {
+                case 1:
+                    mainActivity.setCurrentConnected(true);
+                    break;
+                case 0:
+                    mainActivity.setCurrentConnected(false);
+            }
         }
 
         Page page;
